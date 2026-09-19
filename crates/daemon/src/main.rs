@@ -198,6 +198,7 @@ async fn run(options: Options) -> Result<()> {
                         timeout_seconds: settings.timeout_seconds,
                         auto_copy: settings.auto_copy,
                         play_sound: settings.sound,
+                        click: event.click,
                         actions: if settings.show_actions {
                             event.actions
                         } else {
@@ -272,7 +273,8 @@ async fn run(options: Options) -> Result<()> {
                         };
                         let request = NotificationRequest {
                             title: title.into(), body, priority: Priority::DEFAULT,
-                            timeout_seconds: 8, auto_copy: false, play_sound: false, actions: Vec::new(),
+                            timeout_seconds: 8, auto_copy: false, play_sound: false,
+                            click: None, actions: Vec::new(),
                         };
                         let _ = tokio::task::spawn_blocking(move || backend.show(request)).await;
                     });

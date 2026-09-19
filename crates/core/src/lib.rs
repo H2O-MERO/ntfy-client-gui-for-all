@@ -146,6 +146,7 @@ async fn subscription_loop(
 ) {
     let mut attempt = 0_u32;
     let mut dedupe = Deduplicator::new(DEDUPLICATION_WINDOW);
+    let mut last_event_id = None;
 
     loop {
         if *stop.borrow() {
@@ -173,10 +174,27 @@ async fn subscription_loop(
 
         let result = match topic.protocol {
             SubscriptionProtocol::HttpStream => {
-                listen_http(&client, &server, &topic, &events, &mut dedupe, &mut stop).await
+                listen_http(
+                    &client,
+                    &server,
+                    &topic,
+                    &events,
+                    &mut dedupe,
+                    &mut last_event_id,
+                    &mut stop,
+                )
+                .await
             }
             SubscriptionProtocol::WebSocket => {
-                listen_websocket(&server, &topic, &events, &mut dedupe, &mut stop).await
+                listen_websocket(
+                    &server,
+                    &topic,
+                    &events,
+                    &mut dedupe,
+                    &mut last_event_id,
+                    &mut stop,
+                )
+                .await
             }
         };
 
@@ -242,9 +260,16 @@ async fn listen_http(
     topic: &TopicConfig,
     events: &mpsc::Sender<CoreEvent>,
     dedupe: &mut Deduplicator,
+    last_event_id: &mut Option<String>,
     stop: &mut watch::Receiver<bool>,
 ) -> Result<(), SubscribeError> {
-    let url = subscription_url(&server.base_url, &topic.name, "json", false)?;
+    let url = subscription_url(
+        &server.base_url,
+        &topic.name,
+        "json",
+        false,
+        last_event_id.as_deref(),
+    )?;
     let mut request = client.get(url);
     if let Some(credentials) = &server.credentials {
         request = request.basic_auth(
@@ -269,7 +294,7 @@ async fn listen_http(
     loop {
         tokio::select! {
             chunk = stream.next() => match chunk {
-                Some(Ok(bytes)) => process_bytes(&bytes, server, topic, events, dedupe, &mut decoder).await?,
+                Some(Ok(bytes)) => process_bytes(&bytes, server, topic, events, dedupe, last_event_id, &mut decoder).await?,
                 Some(Err(error)) => return Err(network_error(error)),
                 None => return Err(SubscribeError::Ended),
             },
@@ -285,9 +310,16 @@ async fn listen_websocket(
     topic: &TopicConfig,
     events: &mpsc::Sender<CoreEvent>,
     dedupe: &mut Deduplicator,
+    last_event_id: &mut Option<String>,
     stop: &mut watch::Receiver<bool>,
 ) -> Result<(), SubscribeError> {
-    let url = subscription_url(&server.base_url, &topic.name, "ws", true)?;
+    let url = subscription_url(
+        &server.base_url,
+        &topic.name,
+        "ws",
+        true,
+        last_event_id.as_deref(),
+    )?;
     let mut request = url.as_str().into_client_request().map_err(protocol_error)?;
     if let Some(credentials) = &server.credentials {
         let value = basic_authorization(credentials);
@@ -322,8 +354,8 @@ async fn listen_websocket(
     loop {
         tokio::select! {
             message = socket.next() => match message {
-                Some(Ok(Message::Text(text))) => process_bytes(text.as_bytes(), server, topic, events, dedupe, &mut decoder).await?,
-                Some(Ok(Message::Binary(bytes))) => process_bytes(&bytes, server, topic, events, dedupe, &mut decoder).await?,
+                Some(Ok(Message::Text(text))) => process_bytes(text.as_bytes(), server, topic, events, dedupe, last_event_id, &mut decoder).await?,
+                Some(Ok(Message::Binary(bytes))) => process_bytes(&bytes, server, topic, events, dedupe, last_event_id, &mut decoder).await?,
                 Some(Ok(Message::Ping(_)|Message::Pong(_)|Message::Frame(_))) => {}
                 Some(Ok(Message::Close(_))) | None => return Err(SubscribeError::Ended),
                 Some(Err(error)) => return Err(SubscribeError::Network(error.to_string())),
@@ -344,12 +376,14 @@ async fn process_bytes(
     topic: &TopicConfig,
     events: &mpsc::Sender<CoreEvent>,
     dedupe: &mut Deduplicator,
+    last_event_id: &mut Option<String>,
     decoder: &mut NdjsonDecoder,
 ) -> Result<(), SubscribeError> {
     let decoded = decoder.push(bytes).map_err(protocol_error)?;
     for event in decoded {
         if event.event == EventKind::Message && dedupe.insert(&event.id) {
             let time = event.time;
+            let event_id = event.id.clone();
             if events
                 .send(CoreEvent::Notification {
                     server: server.clone(),
@@ -361,6 +395,7 @@ async fn process_bytes(
             {
                 return Ok(());
             }
+            *last_event_id = Some(event_id);
             publish_status(
                 events,
                 topic,
@@ -380,6 +415,7 @@ fn subscription_url(
     topic: &str,
     endpoint: &str,
     websocket: bool,
+    since: Option<&str>,
 ) -> Result<Url, SubscribeError> {
     let mut url = base.clone();
     if websocket {
@@ -400,6 +436,9 @@ fn subscription_url(
             .path_segments_mut()
             .map_err(|_| SubscribeError::Protocol("server URL cannot be a base URL".into()))?;
         segments.pop_if_empty().push(topic).push(endpoint);
+    }
+    if let Some(since) = since {
+        url.query_pairs_mut().append_pair("since", since);
     }
     Ok(url)
 }
@@ -477,13 +516,16 @@ mod tests {
     #[test]
     fn builds_encoded_subscription_urls() {
         let base = Url::parse("https://example.com/ntfy/").unwrap();
-        let http = subscription_url(&base, "alerts / 中文", "json", false).unwrap();
+        let http = subscription_url(&base, "alerts / 中文", "json", false, None).unwrap();
         assert_eq!(
             http.as_str(),
             "https://example.com/ntfy/alerts%20%2F%20%E4%B8%AD%E6%96%87/json"
         );
-        let ws = subscription_url(&base, "alerts", "ws", true).unwrap();
-        assert_eq!(ws.as_str(), "wss://example.com/ntfy/alerts/ws");
+        let ws = subscription_url(&base, "alerts", "ws", true, Some("nFS3knfcQ1xe")).unwrap();
+        assert_eq!(
+            ws.as_str(),
+            "wss://example.com/ntfy/alerts/ws?since=nFS3knfcQ1xe"
+        );
     }
 
     #[test]

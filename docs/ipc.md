@@ -2,7 +2,7 @@
 
 ## Transport
 
-- Windows: Tokio Named Pipe under `\\.\pipe\ntfy-pusher-<instance>`, with remote clients rejected.
+- Windows: Tokio Named Pipe under `\\.\pipe\ntfy-pusher-<instance>`, with remote clients rejected and a protected DACL granting full access only to LocalSystem and the current object owner.
 - Linux/macOS: Unix Domain Socket inside the instance configuration directory. The directory is mode `0700` and the socket mode `0600`.
 
 Binding the daemon endpoint is also the daemon single-instance lock. The GUI uses a second `gui-<instance>` endpoint; a second GUI sends `OpenGui` and exits.
@@ -17,4 +17,4 @@ Supported commands include snapshot retrieval, live event watching, atomic confi
 
 ## Remaining hardening
 
-Windows Named Pipe creation rejects remote clients but does not yet install an explicit current-user-only DACL. The random token and per-user token file prevent unauthenticated control, but a release-grade Windows build should add a user SID DACL and an impersonation check. Credentials necessarily cross IPC when the GUI edits configuration; they are never logged.
+Windows pipe creation applies an explicit protected owner/System DACL. The random token and per-user token file remain defense in depth. A future defense-in-depth pass may additionally impersonate the client and compare its token user SID. Credentials necessarily cross IPC when the GUI edits configuration; they are never logged.

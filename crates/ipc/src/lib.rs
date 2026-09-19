@@ -228,10 +228,11 @@ impl LocalServer {
         #[cfg(windows)]
         {
             use tokio::net::windows::named_pipe::ServerOptions;
-            let pending = ServerOptions::new()
+            let mut options = ServerOptions::new();
+            options
                 .first_pipe_instance(true)
-                .reject_remote_clients(true)
-                .create(&endpoint.pipe_name)?;
+                .reject_remote_clients(true);
+            let pending = create_current_user_pipe(&options, &endpoint.pipe_name)?;
             Ok(Self {
                 endpoint,
                 pending: Some(pending),
@@ -265,11 +266,12 @@ impl LocalServer {
                 .take()
                 .expect("named pipe accept called concurrently");
             server.connect().await?;
-            self.pending = Some(
-                ServerOptions::new()
-                    .reject_remote_clients(true)
-                    .create(&self.endpoint.pipe_name)?,
-            );
+            let mut options = ServerOptions::new();
+            options.reject_remote_clients(true);
+            self.pending = Some(create_current_user_pipe(
+                &options,
+                &self.endpoint.pipe_name,
+            )?);
             Ok(Box::pin(server))
         }
         #[cfg(unix)]
@@ -278,6 +280,58 @@ impl LocalServer {
             Ok(Box::pin(stream))
         }
     }
+}
+
+#[cfg(windows)]
+fn create_current_user_pipe(
+    options: &tokio::net::windows::named_pipe::ServerOptions,
+    name: &str,
+) -> io::Result<tokio::net::windows::named_pipe::NamedPipeServer> {
+    use std::{ffi::c_void, mem::size_of, os::windows::ffi::OsStrExt};
+    use windows_sys::Win32::{
+        Foundation::LocalFree,
+        Security::{
+            Authorization::ConvertStringSecurityDescriptorToSecurityDescriptorW,
+            PSECURITY_DESCRIPTOR, SECURITY_ATTRIBUTES,
+        },
+    };
+
+    // Protected DACL: LocalSystem and the object owner (the current user) get full access.
+    // Remote clients are independently rejected by ServerOptions.
+    let sddl: Vec<u16> = std::ffi::OsStr::new("D:P(A;;GA;;;SY)(A;;GA;;;OW)")
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let mut descriptor: PSECURITY_DESCRIPTOR = std::ptr::null_mut();
+    // SAFETY: `sddl` is NUL-terminated and `descriptor` is a valid out pointer.
+    let converted = unsafe {
+        ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            sddl.as_ptr(),
+            1,
+            &mut descriptor,
+            std::ptr::null_mut(),
+        )
+    };
+    if converted == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let mut attributes = SECURITY_ATTRIBUTES {
+        nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
+        lpSecurityDescriptor: descriptor.cast::<c_void>(),
+        bInheritHandle: 0,
+    };
+    // SAFETY: `attributes` and its LocalAlloc-backed descriptor remain alive for the call.
+    let result = unsafe {
+        options.create_with_security_attributes_raw(
+            name,
+            (&mut attributes as *mut SECURITY_ATTRIBUTES).cast::<c_void>(),
+        )
+    };
+    // SAFETY: the conversion API allocated this descriptor with LocalAlloc.
+    unsafe {
+        LocalFree(descriptor.cast::<c_void>());
+    }
+    result
 }
 
 #[cfg(unix)]

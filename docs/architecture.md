@@ -33,7 +33,7 @@ One Tokio task is used per enabled topic; no operating-system thread is allocate
 
 Reconnect delay doubles from the configured initial delay to the configured maximum and adds 80–120% jitter. Cancellation interrupts sleep, network streams, and WebSocket reads. Authentication failures become terminal until configuration changes or the user requests reconnect.
 
-The current deduplication window prevents common replay duplicates but is not durable. `since`-based gap recovery is not implemented yet, so the project does not claim zero message loss across long outages.
+The last delivered message id is reused as ntfy's `since` value when either HTTP or WebSocket reconnects, and the bounded deduplication window suppresses replay overlap. This recovers messages still present in the server cache during an in-process network interruption. The cursor is not persisted across daemon restarts, so the project does not claim zero message loss across long outages or restarts.
 
 ## Configuration ownership
 
@@ -44,4 +44,3 @@ Named instances isolate configuration directories, local endpoints, tokens, and 
 ## Rendering
 
 The GUI uses Slint's Fluent widget style with Winit. `renderer-software` is the default feature and `renderer-femtovg` can be selected at build time. The daemon never imports either renderer. Theme changes write `Palette.color-scheme`, with `Unknown` delegating to the system.
-

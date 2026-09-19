@@ -24,6 +24,7 @@ pub struct NotificationRequest {
     pub timeout_seconds: u32,
     pub auto_copy: bool,
     pub play_sound: bool,
+    pub click: Option<url::Url>,
     pub actions: Vec<NtfyAction>,
 }
 
@@ -187,6 +188,7 @@ impl NotificationBackend for NativeNotificationBackend {
         } else {
             "复制内容 / Copy"
         };
+        let mut view_urls = Vec::new();
         let mut toast = Toast::new(&self.app_id)
             .title(&request.title)
             .text1(&request.body)
@@ -197,23 +199,38 @@ impl NotificationBackend for NativeNotificationBackend {
                 Scenario::Default
             })
             .sound(request.play_sound.then_some(Sound::Default))
-            .add_button(button_text, "copy")
-            .on_activated(move |action| {
-                if action.as_deref() == Some("copy") {
-                    let _ = copy_text(copy_body.clone());
-                }
-                Ok(())
-            });
+            .add_button(button_text, "copy");
+
+        if let Some(url) = request.click.filter(is_safe_view_url) {
+            let index = view_urls.len();
+            view_urls.push(url);
+            toast = toast.add_button("打开 / Open", &format!("view:{index}"));
+        }
 
         // URL actions are safe to expose as protocol activation arguments, but arbitrary
         // HTTP actions require confirmation UI and are deliberately not auto-executed.
-        for (index, action) in request.actions.iter().enumerate() {
+        for action in &request.actions {
             if action.action == "view"
-                && let Some(url) = &action.url
+                && let Some(url) = action.url.as_ref().filter(|url| is_safe_view_url(url))
             {
-                toast = toast.add_button(&action.label, &format!("view:{index}:{}", url));
+                let index = view_urls.len();
+                view_urls.push(url.clone());
+                toast = toast.add_button(&action.label, &format!("view:{index}"));
             }
         }
+        toast = toast.on_activated(move |action| {
+            if action.as_deref() == Some("copy") {
+                let _ = copy_text(copy_body.clone());
+            } else if let Some(index) = action
+                .as_deref()
+                .and_then(|value| value.strip_prefix("view:"))
+                .and_then(|value| value.parse::<usize>().ok())
+                && let Some(url) = view_urls.get(index)
+            {
+                let _ = webbrowser::open(url.as_str());
+            }
+            Ok(())
+        });
         toast
             .show()
             .map_err(|error| PlatformError::Notification(error.to_string()))
@@ -241,8 +258,17 @@ impl NotificationBackend for NativeNotificationBackend {
                 )
             })
             .action("copy", if request.auto_copy { "Copied" } else { "Copy" });
-        for (index, action) in request.actions.iter().enumerate() {
-            if action.action == "view" && action.url.is_some() {
+        let mut view_urls = Vec::new();
+        if let Some(url) = request.click.filter(is_safe_view_url) {
+            view_urls.push(url);
+            notification.action("view-0", "Open");
+        }
+        for action in &request.actions {
+            if action.action == "view"
+                && let Some(url) = action.url.as_ref().filter(|url| is_safe_view_url(url))
+            {
+                let index = view_urls.len();
+                view_urls.push(url.clone());
                 notification.action(&format!("view-{index}"), &action.label);
             }
         }
@@ -255,13 +281,23 @@ impl NotificationBackend for NativeNotificationBackend {
             .spawn(move || {
                 handle.wait_for_action(|action| {
                     if action == "copy" {
-                        let _ = copy_text(body);
+                        let _ = copy_text(body.clone());
+                    } else if let Some(index) = action
+                        .strip_prefix("view-")
+                        .and_then(|value| value.parse::<usize>().ok())
+                        && let Some(url) = view_urls.get(index)
+                    {
+                        let _ = webbrowser::open(url.as_str());
                     }
                 });
             })
             .map_err(|error| PlatformError::Notification(error.to_string()))?;
         Ok(())
     }
+}
+
+fn is_safe_view_url(url: &url::Url) -> bool {
+    matches!(url.scheme(), "http" | "https")
 }
 
 pub struct Autostart {
