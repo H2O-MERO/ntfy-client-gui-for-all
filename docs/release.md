@@ -8,17 +8,17 @@ cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo build --locked --release --workspace
 ```
 
-The two distributable binaries are `ntfy-pusher` (daemon) and `ntfy-pusher-gui` (settings). Keep them in the same directory so each can launch the other.
+The two distributable binaries are `ntfy-client-gui-for-all-daemon` and `ntfy-client-gui-for-all`. Keep them in the same directory so each can launch the other.
 
 ## Windows
 
-The workflow builds `x86_64-pc-windows-msvc` and creates `ntfy-pusher-windows-x86_64.zip` with its SHA-256 sidecar. A production installer must create a Start Menu shortcut with AppUserModelID `io.github.h2omero.ntfy-pusher`; that identity is required for correct Toast attribution and activation. Code signing and an installer are not configured yet.
+The workflow builds `x86_64-pc-windows-msvc` and creates `ntfy-client-gui-for-all-windows-x86_64.zip` with its SHA-256 sidecar. A production installer must create a Start Menu shortcut with AppUserModelID `io.github.h2omero.ntfy-client-gui-for-all`; that identity is required for correct Toast attribution and activation. Code signing and an installer are not configured yet.
 
 Portable verified automatic installation is intentionally disabled until a separate updater helper can replace both binaries atomically, restore a backup on failure, and verify publisher identity in addition to SHA-256.
 
 ## Linux
 
-The workflow emits `ntfy-pusher-linux-x86_64.tar.gz`, a desktop entry, and icon. Distribution maintainers should package the files into their native package format and own updates through that package manager. The application reports new versions but does not overwrite package-managed files. KSNI provides the preferred status indicator; desktops without compatible indicator support need a documented launcher/CLI exit fallback.
+The workflow emits `ntfy-client-gui-for-all-linux-x86_64.tar.gz`, a desktop entry, and icon. Distribution maintainers should package the files into their native package format and own updates through that package manager. The application reports new versions but does not overwrite package-managed files. KSNI provides the preferred status indicator; desktops without compatible indicator support need a documented launcher/CLI exit fallback.
 
 ## macOS
 

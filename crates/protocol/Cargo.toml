@@ -1,5 +1,5 @@
 [package]
-name = "ntfy-pusher-protocol"
+name = "ntfy-client-protocol"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,4 +11,3 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 url.workspace = true
-

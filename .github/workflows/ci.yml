@@ -34,5 +34,4 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --locked --workspace --all-targets
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo check --locked -p ntfy-pusher-gui --no-default-features --features renderer-femtovg
-
+      - run: cargo check --locked -p ntfy-client-gui-for-all --no-default-features --features renderer-femtovg

@@ -1,17 +1,17 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 use anyhow::{Context, Result};
-use ntfy_pusher_config::{AppConfig, ConfigStore};
-use ntfy_pusher_core::{CoreEvent, SubscriptionSupervisor, UpdateChecker, event_channel, unix_now};
-use ntfy_pusher_ipc::{
+use ntfy_client_config::{AppConfig, ConfigStore};
+use ntfy_client_core::{CoreEvent, SubscriptionSupervisor, UpdateChecker, event_channel, unix_now};
+use ntfy_client_ipc::{
     DaemonSnapshot, Endpoint, IpcFault, LocalServer, Request, RequestEnvelope, Response,
     ResponseEnvelope, TopicStatus, read_frame, write_frame,
 };
-use ntfy_pusher_platform::{
+use ntfy_client_platform::{
     Autostart, NativeNotificationBackend, NotificationBackend, NotificationRequest, TrayCommand,
     spawn_tray,
 };
-use ntfy_pusher_protocol::Priority;
+use ntfy_client_protocol::Priority;
 use std::{
     env,
     path::{Path, PathBuf},
@@ -22,28 +22,28 @@ use tokio::sync::{Mutex, RwLock, broadcast, watch};
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
-const APP_ID: &str = "io.github.h2omero.ntfy-pusher";
+const APP_ID: &str = "io.github.h2omero.ntfy-client-gui-for-all";
 
 #[derive(Debug)]
 struct Options {
     instance: String,
     allow_multiple: bool,
     start_in_tray: bool,
-    legacy_dir: Option<PathBuf>,
+    import_dir: Option<PathBuf>,
     config_dir: Option<PathBuf>,
 }
 
 fn print_help() {
     println!(
-        "ntfy-pusher {}\n\n\
-         Usage: ntfy-pusher [OPTIONS]\n\n\
+        "ntfy-client-gui-for-all-daemon {}\n\n\
+         Usage: ntfy-client-gui-for-all-daemon [OPTIONS]\n\n\
          Options:\n\
            -h, --help                        Show this help\n\
            -t, --start-in-tray               Compatibility alias; daemon always runs in background\n\
            -m, --allow-multiple-instances    Start an isolated PID-named instance\n\
                --instance <NAME>             Select an isolated config and IPC namespace\n\
                --config-dir <PATH>           Override the per-user config root (testing/portable use)\n\
-               --legacy-dir <PATH>           Import legacy settings/topics without deleting them",
+               --import-dir <PATH>           Import compatible settings/topics without deleting them",
         env!("CARGO_PKG_VERSION")
     );
 }
@@ -53,7 +53,7 @@ fn parse_options() -> Result<Option<Options>> {
     let mut explicit_instance = false;
     let mut allow_multiple = false;
     let mut start_in_tray = false;
-    let mut legacy_dir = None;
+    let mut import_dir = None;
     let mut config_dir = None;
     let mut args = env::args_os().skip(1);
     while let Some(arg) = args.next() {
@@ -72,9 +72,9 @@ fn parse_options() -> Result<Option<Options>> {
                     .into_owned();
                 explicit_instance = true;
             }
-            "--legacy-dir" => {
-                legacy_dir = Some(PathBuf::from(
-                    args.next().context("--legacy-dir requires a path")?,
+            "--import-dir" => {
+                import_dir = Some(PathBuf::from(
+                    args.next().context("--import-dir requires a path")?,
                 ));
             }
             "--config-dir" => {
@@ -92,7 +92,7 @@ fn parse_options() -> Result<Option<Options>> {
         instance,
         allow_multiple,
         start_in_tray,
-        legacy_dir,
+        import_dir,
         config_dir,
     }))
 }
@@ -120,16 +120,16 @@ async fn run(options: Options) -> Result<()> {
         .map(Ok)
         .unwrap_or_else(|| ConfigStore::discover(&options.instance))?;
     if !store.config_path().exists() {
-        let legacy_dir = options
-            .legacy_dir
+        let import_dir = options
+            .import_dir
             .clone()
             .or_else(current_executable_directory);
-        if let Some(legacy_dir) = legacy_dir
-            && let Some(report) = store.migrate_legacy(&legacy_dir)?
+        if let Some(import_dir) = import_dir
+            && let Some(report) = store.import_compatible(&import_dir)?
         {
             info!(
                 topics = report.topics_imported,
-                "legacy configuration imported; source files preserved"
+                "compatible configuration imported; source files preserved"
             );
         }
     }
@@ -139,7 +139,7 @@ async fn run(options: Options) -> Result<()> {
     let mut server = match LocalServer::bind(endpoint.clone()).await {
         Ok(server) => server,
         Err(error) if !options.allow_multiple => {
-            let _ = ntfy_pusher_ipc::request(&endpoint, &token, Request::OpenGui).await;
+            let _ = ntfy_client_ipc::request(&endpoint, &token, Request::OpenGui).await;
             info!(%error, "daemon already running; requested settings activation");
             return Ok(());
         }
@@ -186,7 +186,7 @@ async fn run(options: Options) -> Result<()> {
                         started_unix_seconds: started,
                         version: env!("CARGO_PKG_VERSION").into(),
                     };
-                    let _ = event_ipc.send(ntfy_pusher_ipc::Event::SnapshotChanged(snapshot));
+                    let _ = event_ipc.send(ntfy_client_ipc::Event::SnapshotChanged(snapshot));
                 }
                 CoreEvent::Notification { server, event, .. } => {
                     let event = *event;
@@ -262,14 +262,14 @@ async fn run(options: Options) -> Result<()> {
                         }.await;
                         let (title, body) = match result {
                             Ok(status) if status.available => (
-                                "ntfy pusher update",
+                                "ntfy-client-gui-for-all update",
                                 format!("Version {} is available. Open settings for details.", status.latest_version.unwrap_or_default()),
                             ),
                             Ok(status) => (
-                                "ntfy pusher",
+                                "ntfy-client-gui-for-all",
                                 format!("Version {} is up to date.", status.current_version),
                             ),
-                            Err(error) => ("ntfy pusher update", format!("Update check failed: {error}")),
+                            Err(error) => ("ntfy-client-gui-for-all update", format!("Update check failed: {error}")),
                         };
                         let request = NotificationRequest {
                             title: title.into(), body, priority: Priority::DEFAULT,
@@ -299,12 +299,12 @@ struct ClientContext {
     statuses: Arc<RwLock<Vec<TopicStatus>>>,
     supervisor: Arc<Mutex<SubscriptionSupervisor>>,
     shutdown: watch::Sender<bool>,
-    events: broadcast::Sender<ntfy_pusher_ipc::Event>,
+    events: broadcast::Sender<ntfy_client_ipc::Event>,
     started: i64,
 }
 
 async fn handle_client(
-    mut stream: ntfy_pusher_ipc::BoxedStream,
+    mut stream: ntfy_client_ipc::BoxedStream,
     context: ClientContext,
 ) -> Result<()> {
     let request: RequestEnvelope = read_frame(&mut stream).await?;
@@ -331,7 +331,7 @@ async fn handle_client(
         .await?;
         write_frame(
             &mut stream,
-            &ntfy_pusher_ipc::Event::SnapshotChanged(snapshot(&context).await),
+            &ntfy_client_ipc::Event::SnapshotChanged(snapshot(&context).await),
         )
         .await?;
         loop {
@@ -340,7 +340,7 @@ async fn handle_client(
                 Err(broadcast::error::RecvError::Lagged(_)) => {
                     write_frame(
                         &mut stream,
-                        &ntfy_pusher_ipc::Event::SnapshotChanged(snapshot(&context).await),
+                        &ntfy_client_ipc::Event::SnapshotChanged(snapshot(&context).await),
                     )
                     .await?;
                 }
@@ -377,7 +377,7 @@ async fn dispatch(request: Request, context: &ClientContext) -> Result<Response,
                 .await;
             *context.config.write().await = replacement;
             context.statuses.write().await.clear();
-            let _ = context.events.send(ntfy_pusher_ipc::Event::SnapshotChanged(
+            let _ = context.events.send(ntfy_client_ipc::Event::SnapshotChanged(
                 snapshot(context).await,
             ));
             Ok(Response::Accepted)
@@ -471,9 +471,9 @@ fn apply_autostart(config: &AppConfig, instance: &str) -> Result<()> {
 fn open_gui(instance: &str) -> Result<()> {
     let mut executable = env::current_exe()?;
     executable.set_file_name(if cfg!(windows) {
-        "ntfy-pusher-gui.exe"
+        "ntfy-client-gui-for-all.exe"
     } else {
-        "ntfy-pusher-gui"
+        "ntfy-client-gui-for-all"
     });
     Command::new(executable)
         .args(["--instance", instance])

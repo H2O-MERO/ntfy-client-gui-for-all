@@ -26,9 +26,9 @@ The same host was then sampled with the optimized Release profile after approxim
 
 The Release GUI was forcibly stopped as part of the harness and the daemon remained alive, directly verifying process separation for that run. The daemon and the isolated temporary configuration were then removed by the harness.
 
-The GUI process was terminated after the screenshot and the daemon was terminated after sampling; the isolated test config was removed. The visual result is stored at [gui-smoke.png](images/gui-smoke.png).
+The GUI process and daemon were terminated after sampling, and the isolated test configuration was removed.
 
-The final daemon sample includes the native tray and IPC broadcast infrastructure; the earlier daemon samples predate that integration. These Debug figures do not establish long-running stability or compare fairly with the legacy Release build. Release-profile samples, real subscriptions, disconnect/reconnect, notification bursts, and 24-hour growth tests remain required. Linux and macOS have no runtime measurement yet.
+The final daemon sample includes the native tray and IPC broadcast infrastructure; the earlier daemon samples predate that integration. These Debug figures do not establish long-running stability or provide a fair comparison with unrelated builds. Release-profile samples, real subscriptions, disconnect/reconnect, notification bursts, and 24-hour growth tests remain required. Linux and macOS have no runtime measurement yet.
 
 ## Required benchmark matrix
 

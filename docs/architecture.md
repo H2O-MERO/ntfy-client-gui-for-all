@@ -2,30 +2,30 @@
 
 ## Process model
 
-`ntfy-pusher` is the background owner of configuration, subscriptions, reconnect state, native notifications, tray/status entry, autostart, and update checks. It does not depend on Slint.
+`ntfy-client-gui-for-all-daemon` is the background owner of configuration, subscriptions, reconnect state, native notifications, tray/status entry, autostart, and update checks. It does not depend on Slint.
 
-`ntfy-pusher-gui` is an on-demand Slint process. It obtains a snapshot over local IPC, submits complete validated configuration replacements, and asks the daemon to reconnect topics. Closing the window destroys the GUI process and does not affect the daemon.
+`ntfy-client-gui-for-all` is an on-demand Slint process. It obtains a snapshot over local IPC, submits complete validated configuration replacements, and asks the daemon to reconnect topics. Closing the window destroys the GUI process and does not affect the daemon.
 
 ```text
 native tray/status ─┐
-ntfy servers ───────┼── ntfy-pusher daemon ── native notifications
+ntfy servers ───────┼── ntfy-client-gui-for-all-daemon ── native notifications
                     │          │
                     │    authenticated IPC
                     │          │
-                    └── ntfy-pusher-gui (on demand)
+                    └── ntfy-client-gui-for-all (on demand)
 ```
 
 ## Workspace modules
 
 | Crate | Responsibility | Slint dependency |
 |---|---|---|
-| `ntfy-pusher-protocol` | ntfy wire types, bounded NDJSON decoder, bounded deduplication | No |
-| `ntfy-pusher-config` | versioned model, validation, atomic persistence, legacy migration | No |
-| `ntfy-pusher-ipc` | messages, snapshots, framing, Named Pipe/Unix Socket transport | No |
-| `ntfy-pusher-core` | HTTP/WebSocket subscriptions, reconnect, update verification | No |
-| `ntfy-pusher-platform` | native notifications, clipboard, tray, autostart | No |
-| `ntfy-pusher-daemon` | background process composition and lifecycle | No |
-| `ntfy-pusher-gui` | Fluent settings UI and IPC client | Yes |
+| `ntfy-client-protocol` | ntfy wire types, bounded NDJSON decoder, bounded deduplication | No |
+| `ntfy-client-config` | versioned model, validation, atomic persistence, compatible-format import | No |
+| `ntfy-client-ipc` | messages, snapshots, framing, Named Pipe/Unix Socket transport | No |
+| `ntfy-client-core` | HTTP/WebSocket subscriptions, reconnect, update verification | No |
+| `ntfy-client-platform` | native notifications, clipboard, tray, autostart | No |
+| `ntfy-client-gui-for-all-daemon` | background process composition and lifecycle | No |
+| `ntfy-client-gui-for-all` | Fluent settings UI and IPC client | Yes |
 
 ## Subscription lifecycle
 

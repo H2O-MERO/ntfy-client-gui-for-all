@@ -1,5 +1,5 @@
 [package]
-name = "ntfy-pusher-gui"
+name = "ntfy-client-gui-for-all"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,13 +8,13 @@ rust-version.workspace = true
 build = "build.rs"
 
 [[bin]]
-name = "ntfy-pusher-gui"
+name = "ntfy-client-gui-for-all"
 path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
-ntfy-pusher-config = { path = "../config" }
-ntfy-pusher-ipc = { path = "../ipc" }
+ntfy-client-config = { path = "../config" }
+ntfy-client-ipc = { path = "../ipc" }
 secrecy.workspace = true
 slint.workspace = true
 tokio.workspace = true

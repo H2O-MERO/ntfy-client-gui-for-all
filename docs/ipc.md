@@ -2,7 +2,7 @@
 
 ## Transport
 
-- Windows: Tokio Named Pipe under `\\.\pipe\ntfy-pusher-<instance>`, with remote clients rejected and a protected DACL granting full access only to LocalSystem and the current object owner.
+- Windows: Tokio Named Pipe under `\\.\pipe\ntfy-client-gui-for-all-<instance>`, with remote clients rejected and a protected DACL granting full access only to LocalSystem and the current object owner.
 - Linux/macOS: Unix Domain Socket inside the instance configuration directory. The directory is mode `0700` and the socket mode `0600`.
 
 Binding the daemon endpoint is also the daemon single-instance lock. The GUI uses a second `gui-<instance>` endpoint; a second GUI sends `OpenGui` and exits.

@@ -15,16 +15,16 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: ntfy-pusher-windows-x86_64.zip
+            artifact: ntfy-client-gui-for-all-windows-x86_64.zip
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-            artifact: ntfy-pusher-linux-x86_64.tar.gz
+            artifact: ntfy-client-gui-for-all-linux-x86_64.tar.gz
           - os: macos-14
             target: aarch64-apple-darwin
-            artifact: ntfy-pusher-macos-aarch64.tar.gz
+            artifact: ntfy-client-gui-for-all-macos-aarch64.tar.gz
           - os: macos-14
             target: x86_64-apple-darwin
-            artifact: ntfy-pusher-macos-x86_64.tar.gz
+            artifact: ntfy-client-gui-for-all-macos-x86_64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -39,27 +39,28 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/ntfy-pusher.exe" dist/
-          Copy-Item "target/${{ matrix.target }}/release/ntfy-pusher-gui.exe" dist/
-          Copy-Item README.md,LICENSE dist/
+          Copy-Item "target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon.exe" dist/
+          Copy-Item "target/${{ matrix.target }}/release/ntfy-client-gui-for-all.exe" dist/
+          Copy-Item README.md,README.en.md,LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath "${{ matrix.artifact }}"
           (Get-FileHash "${{ matrix.artifact }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.artifact }}" | Set-Content -NoNewline "${{ matrix.artifact }}.sha256"
       - if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/ntfy-pusher target/${{ matrix.target }}/release/ntfy-pusher-gui dist/
-          cp packaging/linux/ntfy-pusher.desktop assets/ntfy-pusher.svg README.md LICENSE dist/
+          cp target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon target/${{ matrix.target }}/release/ntfy-client-gui-for-all dist/
+          cp packaging/linux/ntfy-client-gui-for-all.desktop README.md README.en.md LICENSE dist/
+          cp assets/logo.svg dist/ntfy-client-gui-for-all.svg
           tar -czf "${{ matrix.artifact }}" -C dist .
           sha256sum "${{ matrix.artifact }}" > "${{ matrix.artifact }}.sha256"
       - if: runner.os == 'macOS'
         run: |
-          app="dist/ntfy pusher.app"
+          app="dist/ntfy-client-gui-for-all.app"
           mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-          cp target/${{ matrix.target }}/release/ntfy-pusher target/${{ matrix.target }}/release/ntfy-pusher-gui "$app/Contents/MacOS/"
+          cp target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon target/${{ matrix.target }}/release/ntfy-client-gui-for-all "$app/Contents/MacOS/"
           cp packaging/macos/Info.plist "$app/Contents/"
-          cp assets/ntfy-pusher.svg "$app/Contents/Resources/"
+          cp assets/logo.svg "$app/Contents/Resources/"
           codesign --force --deep --sign - "$app"
-          tar -czf "${{ matrix.artifact }}" -C dist "ntfy pusher.app"
+          tar -czf "${{ matrix.artifact }}" -C dist "ntfy-client-gui-for-all.app"
           shasum -a 256 "${{ matrix.artifact }}" > "${{ matrix.artifact }}.sha256"
       - uses: actions/upload-artifact@v4
         with:
@@ -80,4 +81,3 @@ jobs:
         with:
           files: release/*
           generate_release_notes: true
-

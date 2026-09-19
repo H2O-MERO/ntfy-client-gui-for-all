@@ -1,11 +1,11 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 use anyhow::{Context, Result};
-use ntfy_pusher_config::{
+use ntfy_client_config::{
     AppConfig, BasicCredentials, ConfigStore, ServerConfig, SubscriptionProtocol, ThemeMode,
     TopicConfig,
 };
-use ntfy_pusher_ipc::{
+use ntfy_client_ipc::{
     ConnectionState, DaemonSnapshot, Endpoint, Event, Request, RequestEnvelope, Response,
     ResponseEnvelope, TopicStatus, connect, read_frame, request, write_frame,
 };
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     let gui_endpoint = Endpoint::for_instance(store.root(), &format!("gui-{instance}"));
 
     let gui_server =
-        match runtime.block_on(ntfy_pusher_ipc::LocalServer::bind(gui_endpoint.clone())) {
+        match runtime.block_on(ntfy_client_ipc::LocalServer::bind(gui_endpoint.clone())) {
             Ok(server) => server,
             Err(_) => {
                 let response = runtime.block_on(request(&gui_endpoint, &token, Request::OpenGui));
@@ -165,7 +165,7 @@ fn parse_options() -> Result<Options> {
             }
             "-h" | "--help" => {
                 println!(
-                    "ntfy-pusher-gui {}\n\nUsage: ntfy-pusher-gui [--instance NAME]",
+                    "ntfy-client-gui-for-all {}\n\nUsage: ntfy-client-gui-for-all [--instance NAME]",
                     env!("CARGO_PKG_VERSION")
                 );
                 std::process::exit(0);
@@ -210,9 +210,9 @@ fn ensure_daemon(
 fn start_daemon(instance: &str, config_dir: Option<&Path>) -> Result<()> {
     let mut executable = env::current_exe()?;
     executable.set_file_name(if cfg!(windows) {
-        "ntfy-pusher.exe"
+        "ntfy-client-gui-for-all-daemon.exe"
     } else {
-        "ntfy-pusher"
+        "ntfy-client-gui-for-all-daemon"
     });
     let mut command = Command::new(executable);
     command.args(["--instance", instance, "--start-in-tray"]);
@@ -225,7 +225,7 @@ fn start_daemon(instance: &str, config_dir: Option<&Path>) -> Result<()> {
 
 fn start_activation_server(
     runtime: Arc<Runtime>,
-    mut server: ntfy_pusher_ipc::LocalServer,
+    mut server: ntfy_client_ipc::LocalServer,
     token: String,
     weak: slint::Weak<AppWindow>,
 ) {
@@ -248,7 +248,7 @@ fn start_activation_server(
             let result = if accepted {
                 Ok(Response::Accepted)
             } else {
-                Err(ntfy_pusher_ipc::IpcFault::unauthorized())
+                Err(ntfy_client_ipc::IpcFault::unauthorized())
             };
             let _ = write_frame(
                 &mut stream,

@@ -17,7 +17,7 @@ export struct TopicRow {
 }
 
 export component AppWindow inherits Window {
-    title: "ntfy pusher";
+    title: "ntfy-client-gui-for-all";
     width: 980px;
     height: 680px;
 
@@ -65,7 +65,7 @@ export component AppWindow inherits Window {
                         Text { text: "N"; color: Palette.accent-foreground; font-size: 22px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     VerticalLayout { spacing: 1px;
-                        Text { text: "ntfy pusher"; color: Palette.foreground; font-size: 18px; font-weight: 650; }
+                        Text { text: "ntfy-client-gui-for-all"; color: Palette.foreground; font-size: 18px; font-weight: 650; }
                         Text { text: "Cross-platform client"; color: Palette.foreground.with-alpha(0.55); font-size: 10px; }
                     }
                 }
@@ -175,7 +175,7 @@ export component AppWindow inherits Window {
             if root.selected-page == 5: ScrollView { content-width: self.width;
                 VerticalLayout { padding: 28px; spacing: 14px;
                     Text { text: root.language == "zh-CN" ? "关于" : "About"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: "ntfy pusher " + root.app-version; subtitle: root.language == "zh-CN" ? "Rust + Slint 跨平台 ntfy 桌面通知客户端。\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all" : "Cross-platform ntfy desktop client built with Rust and Slint.\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all";
+                    SectionCard { title: "ntfy-client-gui-for-all " + root.app-version; subtitle: root.language == "zh-CN" ? "Rust + Slint 跨平台 ntfy 桌面通知客户端。\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all" : "Cross-platform ntfy desktop client built with Rust and Slint.\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all";
                         Text { text: root.update-status; color: Palette.foreground.with-alpha(0.7); wrap: word-wrap; }
                         Button { text: root.language == "zh-CN" ? "检查更新" : "Check for updates"; clicked => { root.check-updates(); } }
                         Button { text: root.language == "zh-CN" ? "退出后台程序" : "Quit background core"; clicked => { root.quit-daemon(); } }

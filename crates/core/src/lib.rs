@@ -2,11 +2,11 @@
 
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use futures_util::StreamExt;
-use ntfy_pusher_config::{
+use ntfy_client_config::{
     AppConfig, BasicCredentials, ReconnectSettings, ServerConfig, SubscriptionProtocol, TopicConfig,
 };
-use ntfy_pusher_ipc::{ConnectionState, TopicStatus};
-use ntfy_pusher_protocol::{Deduplicator, EventKind, NdjsonDecoder, NtfyEvent};
+use ntfy_client_ipc::{ConnectionState, TopicStatus};
+use ntfy_client_protocol::{Deduplicator, EventKind, NdjsonDecoder, NtfyEvent};
 use rand::Rng;
 use reqwest::StatusCode;
 use secrecy::ExposeSecret;
@@ -70,7 +70,10 @@ impl SubscriptionSupervisor {
         let client = reqwest::Client::builder()
             .connect_timeout(Duration::from_secs(20))
             .tcp_keepalive(Duration::from_secs(30))
-            .user_agent(concat!("ntfy-pusher/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!(
+                "ntfy-client-gui-for-all/",
+                env!("CARGO_PKG_VERSION")
+            ))
             .build()?;
         Ok(Self {
             client,

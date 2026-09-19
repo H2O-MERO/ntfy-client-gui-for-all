@@ -1,5 +1,5 @@
 [package]
-name = "ntfy-pusher-core"
+name = "ntfy-client-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,9 +10,9 @@ rust-version.workspace = true
 base64.workspace = true
 futures-util.workspace = true
 http.workspace = true
-ntfy-pusher-config = { path = "../config" }
-ntfy-pusher-ipc = { path = "../ipc" }
-ntfy-pusher-protocol = { path = "../protocol" }
+ntfy-client-config = { path = "../config" }
+ntfy-client-ipc = { path = "../ipc" }
+ntfy-client-protocol = { path = "../protocol" }
 rand.workspace = true
 reqwest.workspace = true
 secrecy.workspace = true

@@ -1,5 +1,5 @@
 use futures_util::StreamExt;
-use ntfy_pusher_ipc::UpdateStatus;
+use ntfy_client_ipc::UpdateStatus;
 use semver::Version;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -52,7 +52,10 @@ impl UpdateChecker {
         Ok(Self {
             client: reqwest::Client::builder()
                 .timeout(Duration::from_secs(20))
-                .user_agent(concat!("ntfy-pusher/", env!("CARGO_PKG_VERSION")))
+                .user_agent(concat!(
+                    "ntfy-client-gui-for-all/",
+                    env!("CARGO_PKG_VERSION")
+                ))
                 .build()?,
             repository: repository.into(),
         })
@@ -169,7 +172,7 @@ fn parse_tag(tag: &str) -> Result<Version, semver::Error> {
 fn platform_asset_name() -> String {
     let extension = if cfg!(windows) { "zip" } else { "tar.gz" };
     format!(
-        "ntfy-pusher-{}-{}.{}",
+        "ntfy-client-gui-for-all-{}-{}.{}",
         std::env::consts::OS,
         std::env::consts::ARCH,
         extension

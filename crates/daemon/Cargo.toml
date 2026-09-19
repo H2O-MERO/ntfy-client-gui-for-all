@@ -1,5 +1,5 @@
 [package]
-name = "ntfy-pusher-daemon"
+name = "ntfy-client-gui-for-all-daemon"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,16 +7,16 @@ repository.workspace = true
 rust-version.workspace = true
 
 [[bin]]
-name = "ntfy-pusher"
+name = "ntfy-client-gui-for-all-daemon"
 path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
-ntfy-pusher-config = { path = "../config" }
-ntfy-pusher-core = { path = "../core" }
-ntfy-pusher-ipc = { path = "../ipc" }
-ntfy-pusher-platform = { path = "../platform" }
-ntfy-pusher-protocol = { path = "../protocol" }
+ntfy-client-config = { path = "../config" }
+ntfy-client-core = { path = "../core" }
+ntfy-client-ipc = { path = "../ipc" }
+ntfy-client-platform = { path = "../platform" }
+ntfy-client-protocol = { path = "../protocol" }
 secrecy.workspace = true
 semver.workspace = true
 tokio.workspace = true

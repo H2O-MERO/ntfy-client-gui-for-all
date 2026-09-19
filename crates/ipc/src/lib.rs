@@ -1,6 +1,6 @@
 //! Authenticated local IPC shared by the daemon and settings GUI.
 
-use ntfy_pusher_config::AppConfig;
+use ntfy_client_config::AppConfig;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 #[cfg(unix)]
 use std::path::PathBuf;
@@ -191,7 +191,7 @@ impl Endpoint {
         {
             let _ = config_root;
             Self {
-                pipe_name: format!(r"\\.\pipe\ntfy-pusher-{safe}"),
+                pipe_name: format!(r"\\.\pipe\ntfy-client-gui-for-all-{safe}"),
             }
         }
         #[cfg(unix)]

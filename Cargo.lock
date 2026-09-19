@@ -2872,7 +2872,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-config"
+name = "ntfy-client-config"
 version = "0.1.0"
 dependencies = [
  "directories",
@@ -2888,15 +2888,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-core"
+name = "ntfy-client-core"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "futures-util",
  "http",
- "ntfy-pusher-config",
- "ntfy-pusher-ipc",
- "ntfy-pusher-protocol",
+ "ntfy-client-config",
+ "ntfy-client-ipc",
+ "ntfy-client-protocol",
  "rand 0.9.5",
  "reqwest",
  "secrecy",
@@ -2913,29 +2913,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-daemon"
+name = "ntfy-client-gui-for-all"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ntfy-pusher-config",
- "ntfy-pusher-core",
- "ntfy-pusher-ipc",
- "ntfy-pusher-platform",
- "ntfy-pusher-protocol",
- "secrecy",
- "semver",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "ntfy-pusher-gui"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ntfy-pusher-config",
- "ntfy-pusher-ipc",
+ "ntfy-client-config",
+ "ntfy-client-ipc",
  "secrecy",
  "slint",
  "slint-build",
@@ -2945,10 +2928,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-ipc"
+name = "ntfy-client-gui-for-all-daemon"
 version = "0.1.0"
 dependencies = [
- "ntfy-pusher-config",
+ "anyhow",
+ "ntfy-client-config",
+ "ntfy-client-core",
+ "ntfy-client-ipc",
+ "ntfy-client-platform",
+ "ntfy-client-protocol",
+ "secrecy",
+ "semver",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "ntfy-client-ipc"
+version = "0.1.0"
+dependencies = [
+ "ntfy-client-config",
  "serde",
  "serde_json",
  "tempfile",
@@ -2959,13 +2959,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-platform"
+name = "ntfy-client-platform"
 version = "0.1.0"
 dependencies = [
  "arboard",
  "auto-launch",
  "notify-rust",
- "ntfy-pusher-protocol",
+ "ntfy-client-protocol",
  "tauri-winrt-notification 0.8.1",
  "thiserror 2.0.20",
  "tracing",
@@ -2976,7 +2976,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ntfy-pusher-protocol"
+name = "ntfy-client-protocol"
 version = "0.1.0"
 dependencies = [
  "serde",

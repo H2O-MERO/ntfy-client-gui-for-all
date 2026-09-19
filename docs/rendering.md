@@ -7,20 +7,20 @@ The GUI is deliberately isolated from the daemon, so choosing a renderer changes
 The default feature is Winit + Software Renderer:
 
 ```sh
-cargo run -p ntfy-pusher-gui
+cargo run -p ntfy-client-gui-for-all
 ```
 
 FemtoVG remains an explicit alternative:
 
 ```sh
-cargo run -p ntfy-pusher-gui --no-default-features --features renderer-femtovg
+cargo run -p ntfy-client-gui-for-all --no-default-features --features renderer-femtovg
 ```
 
 When a build contains both renderers, `SLINT_BACKEND=winit-software` and `SLINT_BACKEND=winit-femtovg` select one at runtime. Release packages currently use the default software renderer so their behavior is deterministic.
 
 ## What was actually verified
 
-On the Windows development host, the software renderer displayed the dark Fluent layout, rounded cards, controls, and simplified Chinese text correctly at the host's display scale. The measured Debug-process values are in [performance.md](performance.md), and the captured window is in [gui-smoke.png](images/gui-smoke.png).
+On the Windows development host, the software renderer displayed the dark Fluent layout, rounded cards, controls, and simplified Chinese text correctly at the host's display scale. The measured Debug-process values are in [performance.md](performance.md).
 
 FemtoVG is compile-checked locally and in CI, but has not been run or measured in the current environment. Linux and macOS renderer behavior is likewise CI-build coverage only until native runtime testing is completed. No GPU-memory, launch-time, or animation comparison is claimed without measurements.
 

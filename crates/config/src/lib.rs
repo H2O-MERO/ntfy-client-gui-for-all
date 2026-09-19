@@ -1,4 +1,4 @@
-//! Versioned configuration, atomic persistence, and non-destructive legacy migration.
+//! Versioned configuration, atomic persistence, and non-destructive format import.
 
 use directories::ProjectDirs;
 use rand::RngCore;
@@ -102,7 +102,7 @@ impl Default for NotificationSettings {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReconnectSettings {
-    /// Zero preserves the legacy meaning: retry forever.
+    /// Zero means retry forever.
     pub max_attempts: u32,
     pub initial_delay_seconds: u64,
     pub max_delay_seconds: u64,
@@ -219,7 +219,7 @@ pub struct ConfigStore {
 
 impl ConfigStore {
     pub fn discover(instance: &str) -> Result<Self, ConfigError> {
-        let dirs = ProjectDirs::from("io", "H2O-MERO", "ntfy-pusher")
+        let dirs = ProjectDirs::from("io", "H2O-MERO", "ntfy-client-gui-for-all")
             .ok_or(ConfigError::NoConfigDirectory)?;
         let safe_instance: String = instance
             .chars()
@@ -286,25 +286,25 @@ impl ConfigStore {
         Ok(token)
     }
 
-    /// Imports legacy files without modifying or deleting them.
-    pub fn migrate_legacy(
+    /// Imports compatible files without modifying or deleting them.
+    pub fn import_compatible(
         &self,
-        legacy_dir: &Path,
-    ) -> Result<Option<MigrationReport>, ConfigError> {
+        import_dir: &Path,
+    ) -> Result<Option<ImportReport>, ConfigError> {
         if self.config_path().exists() {
             return Ok(None);
         }
-        let settings_path = legacy_dir.join("settings.json");
-        let topics_json_path = legacy_dir.join("topics.json");
-        let topics_txt_path = legacy_dir.join("topics.txt");
+        let settings_path = import_dir.join("settings.json");
+        let topics_json_path = import_dir.join("topics.json");
+        let topics_txt_path = import_dir.join("topics.txt");
         if !settings_path.exists() && !topics_json_path.exists() && !topics_txt_path.exists() {
             return Ok(None);
         }
 
         let mut config = AppConfig::default();
-        let mut report = MigrationReport::default();
+        let mut report = ImportReport::default();
         if settings_path.exists() {
-            let old: LegacySettings = serde_json::from_slice(&fs::read(&settings_path)?)?;
+            let old: ImportSettings = serde_json::from_slice(&fs::read(&settings_path)?)?;
             config.notifications.timeout_seconds = old.timeout.max(0.0).ceil() as u32;
             config.notifications.auto_copy = old.native_notifications_auto_copy_to_clipboard;
             config.notifications.sound = old.custom_tray_notifications_play_default_windows_sound;
@@ -317,13 +317,13 @@ impl ConfigStore {
             report.settings_imported = true;
         }
 
-        let legacy_topics = if topics_json_path.exists() {
-            serde_json::from_slice::<Vec<LegacyTopic>>(&fs::read(&topics_json_path)?)?
+        let imported_topics = if topics_json_path.exists() {
+            serde_json::from_slice::<Vec<ImportTopic>>(&fs::read(&topics_json_path)?)?
         } else if topics_txt_path.exists() {
             fs::read_to_string(&topics_txt_path)?
                 .lines()
                 .filter(|line| !line.trim().is_empty())
-                .map(|name| LegacyTopic {
+                .map(|name| ImportTopic {
                     topic_id: name.trim().to_owned(),
                     server_url: "https://ntfy.sh".into(),
                     username: None,
@@ -335,7 +335,7 @@ impl ConfigStore {
         };
 
         let mut server_ids: HashMap<(String, Option<String>), Uuid> = HashMap::new();
-        for old in legacy_topics {
+        for old in imported_topics {
             let mut url = Url::parse(&old.server_url)?;
             let protocol = match url.scheme() {
                 "ws" => {
@@ -379,7 +379,7 @@ impl ConfigStore {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct MigrationReport {
+pub struct ImportReport {
     pub settings_imported: bool,
     pub topics_imported: usize,
     pub source_files_preserved: bool,
@@ -387,7 +387,7 @@ pub struct MigrationReport {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-struct LegacySettings {
+struct ImportSettings {
     #[serde(default)]
     timeout: f64,
     #[serde(default)]
@@ -412,7 +412,7 @@ fn default_language() -> String {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-struct LegacyTopic {
+struct ImportTopic {
     topic_id: String,
     server_url: String,
     username: Option<String>,
@@ -508,9 +508,9 @@ mod tests {
 
     #[test]
     fn imports_revision_four_without_deleting_sources() {
-        let legacy = tempfile::tempdir().unwrap();
+        let source = tempfile::tempdir().unwrap();
         fs::write(
-            legacy.path().join("settings.json"),
+            source.path().join("settings.json"),
             r#"{
                 "Revision": 4,
                 "Timeout": 7,
@@ -528,15 +528,15 @@ mod tests {
         )
         .unwrap();
         fs::write(
-            legacy.path().join("topics.json"),
+            source.path().join("topics.json"),
             r#"[{"TopicId":"alerts","ServerUrl":"wss://ntfy.sh","Username":"alice","Password":"secret"}]"#,
         )
         .unwrap();
         let destination = tempfile::tempdir().unwrap();
         let store = ConfigStore::at(destination.path());
-        let report = store.migrate_legacy(legacy.path()).unwrap().unwrap();
+        let report = store.import_compatible(source.path()).unwrap().unwrap();
         assert_eq!(report.topics_imported, 1);
-        assert!(legacy.path().join("topics.json").exists());
+        assert!(source.path().join("topics.json").exists());
         let imported = store.load_or_create().unwrap();
         assert_eq!(imported.topics[0].protocol, SubscriptionProtocol::WebSocket);
         assert_eq!(imported.notifications.timeout_seconds, 7);
@@ -553,14 +553,14 @@ mod tests {
     }
 
     #[test]
-    fn imports_legacy_topic_text_non_destructively() {
-        let legacy = tempfile::tempdir().unwrap();
-        fs::write(legacy.path().join("topics.txt"), "one\n\ntwo\n").unwrap();
+    fn imports_topic_text_non_destructively() {
+        let source = tempfile::tempdir().unwrap();
+        fs::write(source.path().join("topics.txt"), "one\n\ntwo\n").unwrap();
         let destination = tempfile::tempdir().unwrap();
         let store = ConfigStore::at(destination.path());
-        let report = store.migrate_legacy(legacy.path()).unwrap().unwrap();
+        let report = store.import_compatible(source.path()).unwrap().unwrap();
         assert_eq!(report.topics_imported, 2);
-        assert!(legacy.path().join("topics.txt").exists());
+        assert!(source.path().join("topics.txt").exists());
     }
 
     #[test]

@@ -1,39 +1,47 @@
-# ntfy pusher
+<p align="center">
+  <img src="assets/logo.svg" width="128" height="128" alt="ntfy-client-gui-for-all Logo">
+</p>
 
-A lightweight cross-platform ntfy desktop notification client built with Rust and Slint.
+<h1 align="center">ntfy-client-gui-for-all</h1>
 
-This repository is a ground-up replacement for `H2O-MERO/ntfy-pusher-Windows`. The legacy C# repository is used only as a read-only behavioral reference; all new implementation lives in this workspace.
+<p align="center">
+  使用 Rust 与 Slint 构建的轻量级跨平台 ntfy 桌面通知客户端
+</p>
 
-## What works
+<p align="center">
+  <strong>简体中文</strong> · <a href="README.en.md">English</a>
+</p>
 
-- Independent background core and on-demand settings GUI.
-- Multi-server and multi-topic subscriptions over WebSocket or HTTP JSON streaming.
-- HTTP Basic authentication with secrets excluded from logs and debug output.
-- Bounded message framing, event-id deduplication, cancellation, and exponential reconnect backoff with jitter.
-- Native Windows Toast with copy and auto-copy behavior; native Linux/macOS notifications with capability-based action fallback.
-- Authenticated local IPC: Windows Named Pipe or Unix Domain Socket plus a per-instance 256-bit token, with event-driven status pushes to the GUI.
-- Daemon and GUI single-instance behavior; named isolated instances preserve the legacy multi-instance use case without sharing files or IPC names.
-- Versioned, atomically-written per-user configuration and non-destructive import of legacy `settings.json`, `topics.json`, and `topics.txt`.
-- Slint Fluent settings pages for overview, servers, topics, notifications, general settings, and updates.
-- Light, dark, and system theme modes; simplified Chinese and English UI.
-- Login autostart through platform-appropriate mechanisms.
-- Windows tray and Linux KSNI status indicator with open, update check, and quit commands.
-- GitHub release checks that recognize only artifacts accompanied by SHA-256 sidecars.
+## 功能
 
-See [implementation status](docs/implementation-status.md) for verified and incomplete platform behavior. In particular, macOS menu-bar integration and automatic update installation are release gates, not silently omitted features.
+- 后台核心与设置界面采用独立进程，关闭 GUI 不会中断通知订阅。
+- 支持多个 ntfy 服务器、多个话题、HTTP JSON Stream 与 WebSocket。
+- 支持 HTTP Basic 身份认证，凭据不会写入日志或调试输出。
+- 支持消息标题、正文、优先级、标签、链接、查看动作与附件元数据。
+- 使用有界队列、消息 ID 去重、`since` 断线恢复、指数退避与随机抖动。
+- Windows 使用原生 Toast；Linux 和 macOS 使用系统通知服务。
+- 支持复制、自动复制、通知声音以及用户确认后的 HTTP(S) 查看动作。
+- Windows Named Pipe 或 Unix Domain Socket 本地 IPC，并使用实例级 256 位令牌认证。
+- 后台与 GUI 单实例运行，支持相互独立的命名实例。
+- Fluent 风格 Slint 设置界面，支持浅色、深色及跟随系统主题。
+- 支持简体中文和英文界面。
+- 支持 Windows 托盘、Linux KSNI 状态指示器和跨平台登录自启动。
+- 支持 GitHub Release 版本检查及 SHA-256 更新包校验。
 
-## Requirements
+各平台已经验证及仍受限制的功能见[实现状态](docs/implementation-status.md)。
 
-- Rust 1.92 or newer.
-- Windows 10/11, macOS 11+, or a Linux desktop with X11/Wayland.
-- Linux build packages on Debian/Ubuntu:
+## 环境要求
+
+- Rust 1.92 或更高版本。
+- Windows 10/11、macOS 11+，或使用 X11/Wayland 的 Linux 桌面。
+- Debian/Ubuntu 构建依赖：
 
   ```sh
   sudo apt install libx11-dev libx11-xcb-dev libxcursor-dev \
     libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev pkg-config
   ```
 
-## Build and test
+## 构建与测试
 
 ```sh
 cargo build --workspace
@@ -41,65 +49,67 @@ cargo test --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-The default GUI uses Winit + Slint Software Renderer:
+默认 GUI 使用 Winit + Slint Software Renderer：
 
 ```sh
-cargo run -p ntfy-pusher-gui
+cargo run -p ntfy-client-gui-for-all
 ```
 
-Build with FemtoVG available:
+使用 FemtoVG：
 
 ```sh
-cargo run -p ntfy-pusher-gui --no-default-features --features renderer-femtovg
+cargo run -p ntfy-client-gui-for-all --no-default-features --features renderer-femtovg
 ```
 
-When both are compiled, select explicitly with `SLINT_BACKEND=winit-software` or `SLINT_BACKEND=winit-femtovg`.
+同时编译两个渲染器时，可使用 `SLINT_BACKEND=winit-software` 或
+`SLINT_BACKEND=winit-femtovg` 显式选择。
 
-## Run
+## 运行
 
-Normally launch `ntfy-pusher-gui`. It starts the daemon if needed. Closing the window exits only the GUI.
+通常只需启动 GUI；GUI 会在需要时启动后台：
 
 ```sh
-cargo run -p ntfy-pusher-gui
+cargo run -p ntfy-client-gui-for-all
 ```
 
-Run the daemon directly:
+直接启动后台：
 
 ```sh
-cargo run -p ntfy-pusher-daemon -- --start-in-tray
+cargo run -p ntfy-client-gui-for-all-daemon -- --start-in-tray
 ```
 
-Compatibility and isolation options:
+命令行选项：
 
-- `-h`, `--help`
-- `-t`, `--start-in-tray` (accepted for compatibility; the daemon is always background-only)
-- `-m`, `--allow-multiple-instances` (uses a PID-derived isolated instance)
-- `--instance NAME` (stable isolated config and IPC namespace)
-- `--legacy-dir PATH` (explicit source for non-destructive legacy import)
-- `--config-dir PATH` (testing/portable override; normal installs use the OS user config directory)
+- `-h`、`--help`：显示帮助。
+- `-t`、`--start-in-tray`：直接以后台模式运行。
+- `-m`、`--allow-multiple-instances`：创建按 PID 隔离的实例。
+- `--instance NAME`：选择稳定的配置与 IPC 命名空间。
+- `--config-dir PATH`：覆盖用户配置目录，适合测试或便携运行。
+- `--import-dir PATH`：从指定目录导入兼容格式的配置，源文件不会被修改。
 
-## Configuration locations
+## 配置
 
-The `directories` crate selects the per-user location for organization `H2O-MERO`, application `ntfy-pusher`. Each instance gets its own directory containing `config.json`, `ipc-token`, and on Unix the local socket. Normal logs never include passwords or the IPC token.
+应用使用操作系统约定的用户配置目录。每个命名实例拥有独立的 `config.json`、
+`ipc-token`，以及 Unix 平台上的本地 Socket。配置通过临时文件和原子替换写入，
+日志不会包含密码或 IPC 令牌。
 
-Legacy files are detected next to the old executable or through `--legacy-dir`. Migration writes the new config first and never overwrites or deletes the source files.
+## 发布
 
-## Package and release
+推送 `vX.Y.Z` 标签后，发布工作流将构建 Windows x86_64、Linux x86_64、
+macOS x86_64 和 macOS arm64 包，并为每个压缩包生成 `.sha256` 文件。
 
-Tagging `vX.Y.Z` runs the release workflow for Windows x86_64, Linux x86_64, and macOS x86_64/aarch64. Every archive receives a `.sha256` sidecar. The generated macOS bundle is ad-hoc signed for CI validation only; public distribution still requires a Developer ID signature and notarization.
+macOS CI 产物只使用临时签名。公开分发仍需要 Developer ID 签名与公证。
+详细说明见[发布文档](docs/release.md)。
 
-Detailed build, package, and signing notes are in [release.md](docs/release.md).
+## 文档
 
-## Documentation
+- [架构](docs/architecture.md)
+- [IPC 与安全](docs/ipc.md)
+- [实现及平台状态](docs/implementation-status.md)
+- [性能测量](docs/performance.md)
+- [渲染器选择与验证](docs/rendering.md)
+- [构建与发布](docs/release.md)
 
-- [Legacy migration audit](docs/migration-audit.md)
-- [Architecture](docs/architecture.md)
-- [IPC security](docs/ipc.md)
-- [Implementation and platform status](docs/implementation-status.md)
-- [Performance measurements](docs/performance.md)
-- [Renderer selection and validation](docs/rendering.md)
-- [Release process](docs/release.md)
-
-## License
+## 许可证
 
 MIT
