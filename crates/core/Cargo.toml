@@ -1,0 +1,30 @@
+[package]
+name = "ntfy-pusher-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+base64.workspace = true
+futures-util.workspace = true
+http.workspace = true
+ntfy-pusher-config = { path = "../config" }
+ntfy-pusher-ipc = { path = "../ipc" }
+ntfy-pusher-protocol = { path = "../protocol" }
+rand.workspace = true
+reqwest.workspace = true
+secrecy.workspace = true
+semver.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+tracing.workspace = true
+url.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

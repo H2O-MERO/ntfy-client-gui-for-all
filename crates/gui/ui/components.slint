@@ -1,0 +1,64 @@
+import { Button, LineEdit, Palette } from "std-widgets.slint";
+
+export component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> selected;
+    callback clicked;
+    height: 44px;
+    border-radius: 8px;
+    background: selected ? Palette.accent-background : touch.has-hover ? Palette.control-background : transparent;
+    animate background { duration: 100ms; }
+    Text {
+        text: root.label;
+        color: selected ? Palette.accent-foreground : Palette.foreground;
+        font-size: 15px;
+        font-weight: selected ? 600 : 400;
+        vertical-alignment: center;
+        x: 14px;
+    }
+    touch := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component SectionCard inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: Palette.border;
+    background: Palette.control-background;
+    VerticalLayout {
+        padding: 18px;
+        spacing: 4px;
+        Text { text: root.title; color: Palette.foreground; font-size: 17px; font-weight: 600; }
+        Text { text: root.subtitle; color: Palette.foreground.with-alpha(0.65); font-size: 12px; wrap: word-wrap; }
+        @children
+    }
+}
+
+export component StatCard inherits Rectangle {
+    in property <string> value;
+    in property <string> label;
+    border-radius: 12px;
+    background: Palette.control-background;
+    border-width: 1px;
+    border-color: Palette.border;
+    VerticalLayout {
+        padding: 16px;
+        spacing: 5px;
+        Text { text: root.value; color: Palette.accent-background; font-size: 30px; font-weight: 700; }
+        Text { text: root.label; color: Palette.foreground.with-alpha(0.7); font-size: 13px; }
+    }
+}
+
+export component LabeledInput inherits VerticalLayout {
+    in property <string> label;
+    in property <string> placeholder;
+    in-out property <string> value <=> input.text;
+    in property <bool> password: false;
+    spacing: 5px;
+    Text { text: root.label; color: Palette.foreground.with-alpha(0.75); font-size: 12px; }
+    input := LineEdit {
+        placeholder-text: root.placeholder;
+        input-type: root.password ? InputType.password : InputType.text;
+    }
+}

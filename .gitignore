@@ -1,0 +1,15 @@
+/target/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+/dist/
+/artifacts/
+/legacy/
+/.smoke-state/
+
+# Runtime state and credentials must never enter source control.
+config.json
+ipc-token
+*.sock

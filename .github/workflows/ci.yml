@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libx11-xcb-dev libxcursor-dev libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev pkg-config
+      - uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --locked --workspace --all-targets
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo check --locked -p ntfy-pusher-gui --no-default-features --features renderer-femtovg
+

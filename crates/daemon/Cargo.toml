@@ -1,0 +1,24 @@
+[package]
+name = "ntfy-pusher-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "ntfy-pusher"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+ntfy-pusher-config = { path = "../config" }
+ntfy-pusher-core = { path = "../core" }
+ntfy-pusher-ipc = { path = "../ipc" }
+ntfy-pusher-platform = { path = "../platform" }
+ntfy-pusher-protocol = { path = "../protocol" }
+secrecy.workspace = true
+semver.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

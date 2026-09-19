@@ -1,0 +1,27 @@
+[package]
+name = "ntfy-pusher-platform"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arboard.workspace = true
+auto-launch.workspace = true
+ntfy-pusher-protocol = { path = "../protocol" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+tauri-winrt-notification = "0.8"
+tray-icon = { version = "0.25", default-features = false }
+windows-sys = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+notify-rust = "4.18"
+tray-icon = { version = "0.25", default-features = false, features = ["ksni"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+notify-rust = "4.18"
+tray-icon = { version = "0.25", default-features = false }

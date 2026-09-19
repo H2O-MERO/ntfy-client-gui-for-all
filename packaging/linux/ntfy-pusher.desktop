@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ntfy pusher
+Comment=Cross-platform ntfy notification client
+Exec=ntfy-pusher-gui
+Icon=ntfy-pusher
+Terminal=false
+Categories=Network;Utility;
+StartupNotify=true
+

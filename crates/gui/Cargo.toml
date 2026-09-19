@@ -1,0 +1,30 @@
+[package]
+name = "ntfy-pusher-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "ntfy-pusher-gui"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+ntfy-pusher-config = { path = "../config" }
+ntfy-pusher-ipc = { path = "../ipc" }
+secrecy.workspace = true
+slint.workspace = true
+tokio.workspace = true
+url.workspace = true
+uuid.workspace = true
+
+[build-dependencies]
+slint-build.workspace = true
+
+[features]
+default = ["renderer-software"]
+renderer-software = ["slint/renderer-software", "slint-build/renderer-software"]
+renderer-femtovg = ["slint/renderer-femtovg"]
