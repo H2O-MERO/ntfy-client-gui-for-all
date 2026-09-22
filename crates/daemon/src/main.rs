@@ -262,14 +262,14 @@ async fn run(options: Options) -> Result<()> {
                         }.await;
                         let (title, body) = match result {
                             Ok(status) if status.available => (
-                                "ntfy-client-gui-for-all update",
+                                "Ntfy Client GUI Update",
                                 format!("Version {} is available. Open settings for details.", status.latest_version.unwrap_or_default()),
                             ),
                             Ok(status) => (
-                                "ntfy-client-gui-for-all",
+                                "Ntfy Client GUI",
                                 format!("Version {} is up to date.", status.current_version),
                             ),
-                            Err(error) => ("ntfy-client-gui-for-all update", format!("Update check failed: {error}")),
+                            Err(error) => ("Ntfy Client GUI Update", format!("Update check failed: {error}")),
                         };
                         let request = NotificationRequest {
                             title: title.into(), body, priority: Priority::DEFAULT,

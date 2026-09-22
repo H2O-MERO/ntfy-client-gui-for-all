@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=ntfy-client-gui-for-all
+Name=Ntfy Client GUI
 Comment=Cross-platform ntfy notification client
 Exec=ntfy-client-gui-for-all
 Icon=ntfy-client-gui-for-all

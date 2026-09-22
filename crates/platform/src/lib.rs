@@ -83,7 +83,7 @@ pub fn spawn_tray(
                     .map_err(|error| PlatformError::Tray(error.to_string()))?;
                 let tray = TrayIconBuilder::new()
                     .with_menu(Box::new(menu))
-                    .with_tooltip("ntfy-client-gui-for-all")
+                    .with_tooltip("Ntfy Client GUI")
                     .with_icon(icon)
                     .build()
                     .map_err(|error| PlatformError::Tray(error.to_string()))?;
@@ -318,7 +318,7 @@ impl Autostart {
             args.push("--start-in-tray");
         }
         let inner = auto_launch::AutoLaunchBuilder::new()
-            .set_app_name("ntfy-client-gui-for-all")
+            .set_app_name("Ntfy Client GUI")
             .set_app_path(executable)
             .set_args(&args)
             .build()

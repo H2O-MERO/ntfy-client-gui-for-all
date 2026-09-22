@@ -660,7 +660,12 @@ fn apply_snapshot(ui: &AppWindow, snapshot: DaemonSnapshot) {
         .iter()
         .filter(|status| status.state == ConnectionState::Connected)
         .count();
-    ui.set_daemon_status(format!("{connected}/{} connected", config.topics.len()).into());
+    let daemon_status = if config.language == "zh-CN" {
+        format!("{connected}/{} 已连接", config.topics.len())
+    } else {
+        format!("{connected}/{} connected", config.topics.len())
+    };
+    ui.set_daemon_status(daemon_status.into());
     ui.set_app_version(snapshot.version.into());
     ui.set_error_message(SharedString::default());
 }
@@ -702,7 +707,11 @@ fn topic_rows(config: &AppConfig, statuses: &[TopicStatus]) -> Vec<TopicRow> {
             server: servers
                 .get(&topic.server_id)
                 .copied()
-                .unwrap_or("Missing server")
+                .unwrap_or(if config.language == "zh-CN" {
+                    "服务器不存在"
+                } else {
+                    "Missing server"
+                })
                 .into(),
             protocol: match topic.protocol {
                 SubscriptionProtocol::WebSocket => "WebSocket",
@@ -714,19 +723,26 @@ fn topic_rows(config: &AppConfig, statuses: &[TopicStatus]) -> Vec<TopicRow> {
                     .get(&topic.id)
                     .copied()
                     .unwrap_or(ConnectionState::Connecting),
+                config.language == "zh-CN",
             )
             .into(),
         })
         .collect()
 }
 
-fn state_label(state: ConnectionState) -> &'static str {
-    match state {
-        ConnectionState::Disabled => "Disabled",
-        ConnectionState::Connecting => "Connecting",
-        ConnectionState::Connected => "Connected",
-        ConnectionState::WaitingToRetry => "Waiting to retry",
-        ConnectionState::AuthenticationFailed => "Authentication failed",
-        ConnectionState::Failed => "Failed",
+fn state_label(state: ConnectionState, chinese: bool) -> &'static str {
+    match (state, chinese) {
+        (ConnectionState::Disabled, true) => "已禁用",
+        (ConnectionState::Connecting, true) => "连接中",
+        (ConnectionState::Connected, true) => "已连接",
+        (ConnectionState::WaitingToRetry, true) => "等待重试",
+        (ConnectionState::AuthenticationFailed, true) => "认证失败",
+        (ConnectionState::Failed, true) => "连接失败",
+        (ConnectionState::Disabled, false) => "Disabled",
+        (ConnectionState::Connecting, false) => "Connecting",
+        (ConnectionState::Connected, false) => "Connected",
+        (ConnectionState::WaitingToRetry, false) => "Waiting to retry",
+        (ConnectionState::AuthenticationFailed, false) => "Authentication failed",
+        (ConnectionState::Failed, false) => "Failed",
     }
 }

@@ -1,5 +1,5 @@
-import { Button, ComboBox, HorizontalBox, LineEdit, Palette, ScrollView, Switch, VerticalBox } from "std-widgets.slint";
-import { NavItem, SectionCard, StatCard, LabeledInput } from "components.slint";
+import { Button, ComboBox, LineEdit, Palette, ScrollView, Switch } from "std-widgets.slint";
+import { NavItem, PageHeader, SectionCard, StatCard, LabeledInput } from "components.slint";
 
 export struct ServerRow {
     id: string,
@@ -17,9 +17,12 @@ export struct TopicRow {
 }
 
 export component AppWindow inherits Window {
-    title: "ntfy-client-gui-for-all";
-    width: 980px;
-    height: 680px;
+    title: "Ntfy Client GUI";
+    icon: @image-url("../../../assets/logo.svg");
+    preferred-width: 1040px;
+    preferred-height: 720px;
+    min-width: 880px;
+    min-height: 620px;
 
     in-out property <int> selected-page: 0;
     in-out property <int> theme-mode: 2;
@@ -45,6 +48,7 @@ export component AppWindow inherits Window {
     callback refresh;
     callback check-updates;
     callback quit-daemon;
+
     public function apply-theme(mode: int) {
         Palette.color-scheme = mode == 0 ? ColorScheme.light : mode == 1 ? ColorScheme.dark : ColorScheme.unknown;
     }
@@ -53,132 +57,390 @@ export component AppWindow inherits Window {
 
     HorizontalLayout {
         spacing: 0px;
+
         Rectangle {
-            width: 230px;
+            min-width: 252px;
+            max-width: 252px;
             background: Palette.alternate-background;
+
             VerticalLayout {
                 padding: 18px;
                 spacing: 8px;
+                alignment: start;
+
                 HorizontalLayout {
-                    height: 60px;
-                    Rectangle { width: 38px; height: 38px; border-radius: 10px; background: Palette.accent-background;
-                        Text { text: "N"; color: Palette.accent-foreground; font-size: 22px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                    height: 66px;
+                    vertical-stretch: 0;
+                    spacing: 12px;
+
+                    Image {
+                        source: @image-url("../../../assets/logo.svg");
+                        height: 42px;
+                        min-width: 42px;
+                        max-width: 42px;
+                        image-fit: contain;
                     }
-                    VerticalLayout { spacing: 1px;
-                        Text { text: "ntfy-client-gui-for-all"; color: Palette.foreground; font-size: 18px; font-weight: 650; }
-                        Text { text: "Cross-platform client"; color: Palette.foreground.with-alpha(0.55); font-size: 10px; }
+
+                    VerticalLayout {
+                        spacing: 1px;
+                        alignment: center;
+                        Text {
+                            height: 25px;
+                            vertical-stretch: 0;
+                            text: "Ntfy Client GUI";
+                            color: Palette.foreground;
+                            font-size: 17px;
+                            font-weight: 650;
+                            overflow: elide;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            height: 18px;
+                            vertical-stretch: 0;
+                            text: root.language == "zh-CN" ? "跨平台通知客户端" : "Cross-platform notifications";
+                            color: Palette.foreground.with-alpha(0.55);
+                            font-size: 10px;
+                            overflow: elide;
+                            vertical-alignment: center;
+                        }
                     }
                 }
+
                 NavItem { label: root.language == "zh-CN" ? "首页" : "Home"; selected: root.selected-page == 0; clicked => { root.selected-page = 0; } }
                 NavItem { label: root.language == "zh-CN" ? "服务器" : "Servers"; selected: root.selected-page == 1; clicked => { root.selected-page = 1; } }
                 NavItem { label: root.language == "zh-CN" ? "话题" : "Topics"; selected: root.selected-page == 2; clicked => { root.selected-page = 2; } }
                 NavItem { label: root.language == "zh-CN" ? "通知" : "Notifications"; selected: root.selected-page == 3; clicked => { root.selected-page = 3; } }
                 NavItem { label: root.language == "zh-CN" ? "常规" : "General"; selected: root.selected-page == 4; clicked => { root.selected-page = 4; } }
                 NavItem { label: root.language == "zh-CN" ? "关于" : "About"; selected: root.selected-page == 5; clicked => { root.selected-page = 5; } }
+
                 Rectangle { vertical-stretch: 1; }
-                Text { text: root.daemon-status; color: Palette.foreground.with-alpha(0.6); font-size: 11px; wrap: word-wrap; }
+
+                Rectangle {
+                    height: 40px;
+                    vertical-stretch: 0;
+                    border-radius: 8px;
+                    background: Palette.control-background;
+                    Text {
+                        x: 12px;
+                        width: parent.width - 24px;
+                        text: root.daemon-status;
+                        color: Palette.foreground.with-alpha(0.7);
+                        font-size: 11px;
+                        overflow: elide;
+                        vertical-alignment: center;
+                    }
+                }
             }
         }
 
         Rectangle {
             horizontal-stretch: 1;
             background: Palette.background;
-            if root.selected-page == 0: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 16px;
-                    Text { text: root.language == "zh-CN" ? "运行概览" : "Overview"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    Text { text: root.language == "zh-CN" ? "后台核心独立运行，关闭此窗口不会停止订阅。" : "The background core keeps subscriptions running after this window closes."; color: Palette.foreground.with-alpha(0.65); font-size: 13px; }
-                    HorizontalLayout { spacing: 12px;
+
+            if root.selected-page == 0: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "运行概览" : "Overview";
+                        subtitle: root.language == "zh-CN" ? "后台服务独立运行，关闭设置窗口不会停止订阅。" : "The background service keeps subscriptions active when settings are closed.";
+                    }
+
+                    HorizontalLayout {
+                        height: 126px;
+                        vertical-stretch: 0;
+                        spacing: 12px;
                         StatCard { value: root.servers.length; label: root.language == "zh-CN" ? "服务器" : "Servers"; }
                         StatCard { value: root.topics.length; label: root.language == "zh-CN" ? "订阅话题" : "Topics"; }
-                        StatCard { value: root.daemon-status; label: root.language == "zh-CN" ? "后台状态" : "Daemon"; }
+                        StatCard { value: root.daemon-status; label: root.language == "zh-CN" ? "后台状态" : "Background status"; }
                     }
-                    if root.error-message != "": Rectangle { height: 52px; border-radius: 8px; background: #c42b1c33;
-                        Text { x: 14px; text: root.error-message; color: #d13438; vertical-alignment: center; wrap: word-wrap; }
+
+                    if root.error-message != "": Rectangle {
+                        height: 48px;
+                        vertical-stretch: 0;
+                        border-radius: 8px;
+                        background: #c42b1c33;
+                        Text { x: 14px; width: parent.width - 28px; text: root.error-message; color: #d13438; vertical-alignment: center; wrap: word-wrap; }
                     }
-                    SectionCard { title: root.language == "zh-CN" ? "快速操作" : "Quick actions"; subtitle: root.language == "zh-CN" ? "刷新连接状态或打开管理页面。" : "Refresh status or open a management page.";
-                        HorizontalLayout { spacing: 8px; Button { text: root.language == "zh-CN" ? "刷新" : "Refresh"; clicked => { root.refresh(); } } Button { text: root.language == "zh-CN" ? "添加服务器" : "Add server"; clicked => { root.selected-page = 1; } } }
+
+                    SectionCard {
+                        height: 166px;
+                        title: root.language == "zh-CN" ? "快速操作" : "Quick actions";
+                        subtitle: root.language == "zh-CN" ? "刷新连接状态，或前往服务器管理页面。" : "Refresh connection status or open server management.";
+                        HorizontalLayout {
+                            height: 40px;
+                            vertical-stretch: 0;
+                            spacing: 10px;
+                            Button { text: root.language == "zh-CN" ? "刷新状态" : "Refresh status"; clicked => { root.refresh(); } }
+                            Button { text: root.language == "zh-CN" ? "添加服务器" : "Add server"; clicked => { root.selected-page = 1; } }
+                        }
                     }
                 }
             }
 
-            if root.selected-page == 1: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 14px;
-                    Text { text: root.language == "zh-CN" ? "服务器管理" : "Servers"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: root.language == "zh-CN" ? "新增服务器" : "Add server"; subtitle: root.language == "zh-CN" ? "地址使用 HTTPS；用户名与密码必须同时填写。" : "Use HTTPS; username and password must be supplied together.";
-                        HorizontalLayout { spacing: 8px;
+            if root.selected-page == 1: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "服务器管理" : "Servers";
+                        subtitle: root.language == "zh-CN" ? "添加服务器并配置安全连接与身份认证。" : "Add servers and configure secure connections and authentication.";
+                    }
+
+                    SectionCard {
+                        height: 270px;
+                        title: root.language == "zh-CN" ? "新增服务器" : "Add server";
+                        subtitle: root.language == "zh-CN" ? "建议使用 HTTPS；用户名与密码必须同时填写。" : "HTTPS is recommended; username and password must be supplied together.";
+
+                        HorizontalLayout {
+                            height: 66px;
+                            vertical-stretch: 0;
+                            spacing: 10px;
                             server-name := LabeledInput { label: root.language == "zh-CN" ? "名称" : "Name"; placeholder: "ntfy.sh"; }
                             server-url := LabeledInput { label: root.language == "zh-CN" ? "服务器地址" : "Server URL"; placeholder: "https://ntfy.sh"; }
                         }
-                        HorizontalLayout { spacing: 8px;
+
+                        HorizontalLayout {
+                            height: 66px;
+                            vertical-stretch: 0;
+                            spacing: 10px;
                             server-user := LabeledInput { label: root.language == "zh-CN" ? "用户名" : "Username"; placeholder: root.language == "zh-CN" ? "可选" : "Optional"; }
                             server-pass := LabeledInput { label: root.language == "zh-CN" ? "密码" : "Password"; placeholder: root.language == "zh-CN" ? "可选" : "Optional"; password: true; }
-                            Button { text: root.language == "zh-CN" ? "添加" : "Add"; clicked => { root.add-server(server-name.value, server-url.value, server-user.value, server-pass.value); server-name.value = ""; server-url.value = ""; server-user.value = ""; server-pass.value = ""; } }
+                            VerticalLayout {
+                                min-width: 112px;
+                                max-width: 112px;
+                                vertical-stretch: 0;
+                                spacing: 5px;
+                                Rectangle { height: 20px; vertical-stretch: 0; }
+                                Button {
+                                    height: 40px;
+                                    vertical-stretch: 0;
+                                    text: root.language == "zh-CN" ? "添加" : "Add";
+                                    clicked => {
+                                        root.add-server(server-name.value, server-url.value, server-user.value, server-pass.value);
+                                        server-name.value = "";
+                                        server-url.value = "";
+                                        server-user.value = "";
+                                        server-pass.value = "";
+                                    }
+                                }
+                            }
                         }
                     }
-                    for server in root.servers: Rectangle { height: 72px; border-radius: 10px; border-width: 1px; border-color: Palette.border; background: Palette.control-background;
-                        HorizontalLayout { padding: 13px; spacing: 10px;
-                            VerticalLayout { Text { text: server.name; color: Palette.foreground; font-size: 15px; font-weight: 600; } Text { text: server.url + (server.auth == "" ? "" : "  ·  " + server.auth); color: Palette.foreground.with-alpha(0.6); font-size: 11px; } }
-                            Button { text: root.language == "zh-CN" ? "删除" : "Delete"; clicked => { root.delete-server(server.id); } }
+
+                    for server in root.servers: Rectangle {
+                        height: 72px;
+                        vertical-stretch: 0;
+                        border-radius: 10px;
+                        border-width: 1px;
+                        border-color: Palette.border;
+                        background: Palette.control-background;
+                        HorizontalLayout {
+                            padding: 13px;
+                            spacing: 12px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                spacing: 3px;
+                                Text { text: server.name; color: Palette.foreground; font-size: 15px; font-weight: 600; overflow: elide; }
+                                Text { text: server.url + (server.auth == "" ? "" : "  ·  " + server.auth); color: Palette.foreground.with-alpha(0.6); font-size: 11px; overflow: elide; }
+                            }
+                            Button { width: 92px; horizontal-stretch: 0; text: root.language == "zh-CN" ? "删除" : "Delete"; clicked => { root.delete-server(server.id); } }
                         }
                     }
                 }
             }
 
-            if root.selected-page == 2: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 14px;
-                    Text { text: root.language == "zh-CN" ? "话题管理" : "Topics"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: root.language == "zh-CN" ? "新增订阅" : "Add subscription"; subtitle: root.language == "zh-CN" ? "选择服务器并使用 WebSocket 或 HTTP 流。" : "Choose a server and WebSocket or HTTP streaming.";
-                        HorizontalLayout { spacing: 8px;
+            if root.selected-page == 2: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "话题管理" : "Topics";
+                        subtitle: root.language == "zh-CN" ? "为服务器添加话题，并选择 WebSocket 或 HTTP 流。" : "Add topics to a server using WebSocket or HTTP streaming.";
+                    }
+
+                    SectionCard {
+                        height: 270px;
+                        title: root.language == "zh-CN" ? "新增订阅" : "Add subscription";
+                        subtitle: root.language == "zh-CN" ? "服务器可以填写名称或 ID。" : "Identify the server by its name or ID.";
+
+                        HorizontalLayout {
+                            height: 66px;
+                            vertical-stretch: 0;
+                            spacing: 10px;
                             topic-name := LabeledInput { label: root.language == "zh-CN" ? "话题名称" : "Topic"; placeholder: "alerts"; }
                             topic-server := LabeledInput { label: root.language == "zh-CN" ? "服务器名称或 ID" : "Server name or ID"; placeholder: root.servers.length > 0 ? root.servers[0].name : ""; }
-                            topic-protocol := ComboBox { model: ["WebSocket", "HTTP Stream"]; current-value: "WebSocket"; }
-                            Button { text: root.language == "zh-CN" ? "订阅" : "Subscribe"; clicked => { root.add-topic(topic-name.value, topic-server.value, topic-protocol.current-value); topic-name.value = ""; } }
+                        }
+
+                        HorizontalLayout {
+                            height: 66px;
+                            vertical-stretch: 0;
+                            spacing: 10px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                height: 66px;
+                                vertical-stretch: 0;
+                                spacing: 5px;
+                                Text { height: 20px; vertical-stretch: 0; text: root.language == "zh-CN" ? "连接方式" : "Protocol"; color: Palette.foreground.with-alpha(0.75); font-size: 12px; vertical-alignment: center; }
+                                topic-protocol := ComboBox { height: 40px; vertical-stretch: 0; model: ["WebSocket", "HTTP Stream"]; current-value: "WebSocket"; }
+                            }
+                            Rectangle { horizontal-stretch: 1; }
+                            VerticalLayout {
+                                min-width: 126px;
+                                max-width: 126px;
+                                vertical-stretch: 0;
+                                spacing: 5px;
+                                Rectangle { height: 20px; vertical-stretch: 0; }
+                                Button {
+                                    height: 40px;
+                                    vertical-stretch: 0;
+                                    text: root.language == "zh-CN" ? "添加订阅" : "Subscribe";
+                                    clicked => {
+                                        root.add-topic(topic-name.value, topic-server.value, topic-protocol.current-value);
+                                        topic-name.value = "";
+                                    }
+                                }
+                            }
                         }
                     }
-                    for topic in root.topics: Rectangle { height: 76px; border-radius: 10px; border-width: 1px; border-color: Palette.border; background: Palette.control-background;
-                        HorizontalLayout { padding: 13px; spacing: 9px;
-                            VerticalLayout { Text { text: topic.name + " @ " + topic.server; color: Palette.foreground; font-size: 15px; font-weight: 600; } Text { text: topic.protocol + "  ·  " + topic.status; color: Palette.foreground.with-alpha(0.6); font-size: 11px; } }
-                            Button { text: root.language == "zh-CN" ? "重连" : "Reconnect"; clicked => { root.reconnect-topic(topic.id); } }
-                            Button { text: root.language == "zh-CN" ? "删除" : "Delete"; clicked => { root.delete-topic(topic.id); } }
+
+                    for topic in root.topics: Rectangle {
+                        height: 76px;
+                        vertical-stretch: 0;
+                        border-radius: 10px;
+                        border-width: 1px;
+                        border-color: Palette.border;
+                        background: Palette.control-background;
+                        HorizontalLayout {
+                            padding: 13px;
+                            spacing: 10px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                spacing: 3px;
+                                Text { text: topic.name + " @ " + topic.server; color: Palette.foreground; font-size: 15px; font-weight: 600; overflow: elide; }
+                                Text { text: topic.protocol + "  ·  " + topic.status; color: Palette.foreground.with-alpha(0.6); font-size: 11px; overflow: elide; }
+                            }
+                            Button { width: 92px; horizontal-stretch: 0; text: root.language == "zh-CN" ? "重连" : "Reconnect"; clicked => { root.reconnect-topic(topic.id); } }
+                            Button { width: 92px; horizontal-stretch: 0; text: root.language == "zh-CN" ? "删除" : "Delete"; clicked => { root.delete-topic(topic.id); } }
                         }
                     }
                 }
             }
 
-            if root.selected-page == 3: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 14px;
-                    Text { text: root.language == "zh-CN" ? "通知设置" : "Notifications"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: root.language == "zh-CN" ? "系统通知" : "System notifications"; subtitle: root.language == "zh-CN" ? "使用当前平台的原生通知中心。" : "Use the native notification center for this platform.";
-                        auto-copy-switch := Switch { text: root.language == "zh-CN" ? "收到消息后自动复制正文" : "Copy message body automatically"; checked: root.auto-copy; toggled => { root.auto-copy = self.checked; } }
-                        sound-switch := Switch { text: root.language == "zh-CN" ? "播放通知声音" : "Play notification sound"; checked: root.notification-sound; toggled => { root.notification-sound = self.checked; } }
-                        HorizontalLayout { Text { text: root.language == "zh-CN" ? "显示时长（秒）" : "Timeout (seconds)"; color: Palette.foreground; } timeout-input := LineEdit { text: root.timeout-seconds; input-type: number; } }
-                        Button { text: root.language == "zh-CN" ? "保存" : "Save"; clicked => { root.timeout-seconds = timeout-input.text.to-float(); root.save-preferences(root.theme-mode, root.language, root.autostart, root.start-minimized, root.auto-copy, root.notification-sound, root.timeout-seconds); } }
+            if root.selected-page == 3: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "通知设置" : "Notifications";
+                        subtitle: root.language == "zh-CN" ? "控制系统通知、声音与剪贴板行为。" : "Control system notifications, sound, and clipboard behavior.";
+                    }
+
+                    SectionCard {
+                        height: 318px;
+                        title: root.language == "zh-CN" ? "系统通知" : "System notifications";
+                        subtitle: root.language == "zh-CN" ? "通知由当前平台的原生通知中心显示。" : "Notifications are displayed by the platform's native notification center.";
+
+                        auto-copy-switch := Switch { height: 36px; vertical-stretch: 0; text: root.language == "zh-CN" ? "收到消息后自动复制正文" : "Copy message body automatically"; checked: root.auto-copy; toggled => { root.auto-copy = self.checked; } }
+                        sound-switch := Switch { height: 36px; vertical-stretch: 0; text: root.language == "zh-CN" ? "播放通知声音" : "Play notification sound"; checked: root.notification-sound; toggled => { root.notification-sound = self.checked; } }
+
+                        VerticalLayout {
+                            height: 66px;
+                            vertical-stretch: 0;
+                            spacing: 5px;
+                            Text { height: 20px; vertical-stretch: 0; text: root.language == "zh-CN" ? "显示时长（秒）" : "Timeout (seconds)"; color: Palette.foreground.with-alpha(0.75); font-size: 12px; vertical-alignment: center; }
+                            timeout-input := LineEdit { height: 40px; vertical-stretch: 0; text: root.timeout-seconds; input-type: number; }
+                        }
+
+                        Button {
+                            height: 40px;
+                            vertical-stretch: 0;
+                            text: root.language == "zh-CN" ? "保存通知设置" : "Save notification settings";
+                            clicked => {
+                                root.timeout-seconds = timeout-input.text.to-float();
+                                root.save-preferences(root.theme-mode, root.language, root.autostart, root.start-minimized, root.auto-copy, root.notification-sound, root.timeout-seconds);
+                            }
+                        }
                     }
                 }
             }
 
-            if root.selected-page == 4: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 14px;
-                    Text { text: root.language == "zh-CN" ? "常规设置" : "General"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: root.language == "zh-CN" ? "外观与语言" : "Appearance and language"; subtitle: root.language == "zh-CN" ? "系统模式会跟随操作系统配色。" : "System mode follows the operating system color scheme.";
-                        HorizontalLayout { Text { text: root.language == "zh-CN" ? "主题" : "Theme"; color: Palette.foreground; } theme-box := ComboBox { model: root.language == "zh-CN" ? ["浅色", "深色", "跟随系统"] : ["Light", "Dark", "System"]; current-index: root.theme-mode; selected(value) => { root.theme-mode = self.current-index; root.apply-theme(self.current-index); } } }
-                        HorizontalLayout { Text { text: root.language == "zh-CN" ? "语言" : "Language"; color: Palette.foreground; } language-box := ComboBox { model: ["简体中文", "English"]; current-index: root.language == "zh-CN" ? 0 : 1; selected(value) => { root.language = self.current-index == 0 ? "zh-CN" : "en-US"; } } }
+            if root.selected-page == 4: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "常规设置" : "General";
+                        subtitle: root.language == "zh-CN" ? "设置外观、语言和登录启动行为。" : "Configure appearance, language, and login startup.";
                     }
-                    SectionCard { title: root.language == "zh-CN" ? "启动行为" : "Startup"; subtitle: root.language == "zh-CN" ? "登录后只启动后台核心，不加载设置窗口。" : "Start only the background core at login.";
-                        autostart-switch := Switch { text: root.language == "zh-CN" ? "登录时启动" : "Start at login"; checked: root.autostart; toggled => { root.autostart = self.checked; } }
-                        minimized-switch := Switch { text: root.language == "zh-CN" ? "静默启动" : "Start silently"; checked: root.start-minimized; toggled => { root.start-minimized = self.checked; } }
-                        Button { text: root.language == "zh-CN" ? "保存设置" : "Save settings"; clicked => { root.save-preferences(root.theme-mode, root.language, root.autostart, root.start-minimized, root.auto-copy, root.notification-sound, root.timeout-seconds); } }
+
+                    SectionCard {
+                        height: 232px;
+                        title: root.language == "zh-CN" ? "外观与语言" : "Appearance and language";
+                        subtitle: root.language == "zh-CN" ? "跟随系统会自动使用操作系统配色。" : "System mode follows the operating system color scheme.";
+
+                        HorizontalLayout {
+                            height: 40px;
+                            vertical-stretch: 0;
+                            spacing: 12px;
+                            Text { width: 84px; horizontal-stretch: 0; text: root.language == "zh-CN" ? "主题" : "Theme"; color: Palette.foreground; vertical-alignment: center; }
+                            theme-box := ComboBox { height: 40px; vertical-stretch: 0; model: root.language == "zh-CN" ? ["浅色", "深色", "跟随系统"] : ["Light", "Dark", "System"]; current-index: root.theme-mode; selected(value) => { root.theme-mode = self.current-index; root.apply-theme(self.current-index); } }
+                        }
+
+                        HorizontalLayout {
+                            height: 40px;
+                            vertical-stretch: 0;
+                            spacing: 12px;
+                            Text { width: 84px; horizontal-stretch: 0; text: root.language == "zh-CN" ? "语言" : "Language"; color: Palette.foreground; vertical-alignment: center; }
+                            language-box := ComboBox { height: 40px; vertical-stretch: 0; model: ["简体中文", "English"]; current-index: root.language == "zh-CN" ? 0 : 1; selected(value) => { root.language = self.current-index == 0 ? "zh-CN" : "en-US"; } }
+                        }
+                    }
+
+                    SectionCard {
+                        height: 238px;
+                        title: root.language == "zh-CN" ? "启动行为" : "Startup";
+                        subtitle: root.language == "zh-CN" ? "登录后只启动后台服务，不自动打开设置窗口。" : "Start only the background service at login.";
+                        autostart-switch := Switch { height: 36px; vertical-stretch: 0; text: root.language == "zh-CN" ? "登录时启动" : "Start at login"; checked: root.autostart; toggled => { root.autostart = self.checked; } }
+                        minimized-switch := Switch { height: 36px; vertical-stretch: 0; text: root.language == "zh-CN" ? "静默启动" : "Start silently"; checked: root.start-minimized; toggled => { root.start-minimized = self.checked; } }
+                        Button { height: 40px; vertical-stretch: 0; text: root.language == "zh-CN" ? "保存常规设置" : "Save general settings"; clicked => { root.save-preferences(root.theme-mode, root.language, root.autostart, root.start-minimized, root.auto-copy, root.notification-sound, root.timeout-seconds); } }
                     }
                 }
             }
 
-            if root.selected-page == 5: ScrollView { content-width: self.width;
-                VerticalLayout { padding: 28px; spacing: 14px;
-                    Text { text: root.language == "zh-CN" ? "关于" : "About"; color: Palette.foreground; font-size: 30px; font-weight: 700; }
-                    SectionCard { title: "ntfy-client-gui-for-all " + root.app-version; subtitle: root.language == "zh-CN" ? "Rust + Slint 跨平台 ntfy 桌面通知客户端。\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all" : "Cross-platform ntfy desktop client built with Rust and Slint.\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all";
-                        Text { text: root.update-status; color: Palette.foreground.with-alpha(0.7); wrap: word-wrap; }
-                        Button { text: root.language == "zh-CN" ? "检查更新" : "Check for updates"; clicked => { root.check-updates(); } }
-                        Button { text: root.language == "zh-CN" ? "退出后台程序" : "Quit background core"; clicked => { root.quit-daemon(); } }
+            if root.selected-page == 5: ScrollView {
+                content-width: self.width;
+                VerticalLayout {
+                    padding: 28px;
+                    spacing: 18px;
+                    alignment: start;
+
+                    PageHeader {
+                        title: root.language == "zh-CN" ? "关于" : "About";
+                        subtitle: root.language == "zh-CN" ? "版本信息、更新与后台控制。" : "Version information, updates, and background controls.";
+                    }
+
+                    SectionCard {
+                        height: 306px;
+                        title: "Ntfy Client GUI " + root.app-version;
+                        subtitle: root.language == "zh-CN" ? "Rust + Slint 跨平台 ntfy 桌面通知客户端。\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all" : "Cross-platform ntfy desktop client built with Rust and Slint.\nMIT License · github.com/H2O-MERO/ntfy-client-gui-for-all";
+                        Text { height: 46px; vertical-stretch: 0; text: root.update-status; color: Palette.foreground.with-alpha(0.7); wrap: word-wrap; vertical-alignment: top; }
+                        Button { height: 40px; vertical-stretch: 0; text: root.language == "zh-CN" ? "检查更新" : "Check for updates"; clicked => { root.check-updates(); } }
+                        Button { height: 40px; vertical-stretch: 0; text: root.language == "zh-CN" ? "退出后台服务" : "Quit background service"; clicked => { root.quit-daemon(); } }
                     }
                 }
             }
