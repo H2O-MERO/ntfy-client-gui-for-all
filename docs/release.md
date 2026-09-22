@@ -18,11 +18,11 @@ Portable verified automatic installation is intentionally disabled until a separ
 
 ## Linux
 
-The workflow emits `ntfy-client-gui-for-all-linux-x86_64.tar.gz`, a desktop entry, and icon. Distribution maintainers should package the files into their native package format and own updates through that package manager. The application reports new versions but does not overwrite package-managed files. KSNI provides the preferred status indicator; desktops without compatible indicator support need a documented launcher/CLI exit fallback.
+Linux release artifacts are not currently published. Distribution maintainers may build from source and should package the files using their native package format.
 
 ## macOS
 
-The workflow creates x86_64 and arm64 `.app` bundles and applies only an ad-hoc signature for CI artifact integrity. Public distribution requires:
+macOS release artifacts are not currently published. Public distribution requires:
 
 1. A valid Apple Developer ID Application certificate.
 2. Hardened runtime signing for the bundle and both executables.
@@ -41,4 +41,4 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-The release workflow builds all configured targets and attaches archives plus `.sha256` files. The in-app checker targets this repository and only reports `verified_asset_available` when both names match the active OS/architecture and the sidecar exists.
+The release workflow builds Windows x86_64 and attaches the ZIP archive plus its `.sha256` file. The in-app checker targets this repository and only reports `verified_asset_available` when both names match the active OS/architecture and the sidecar exists.

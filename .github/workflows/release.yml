@@ -8,69 +8,35 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact: ntfy-client-gui-for-all-windows-x86_64.zip
-          - os: ubuntu-24.04
-            target: x86_64-unknown-linux-gnu
-            artifact: ntfy-client-gui-for-all-linux-x86_64.tar.gz
-          - os: macos-14
-            target: aarch64-apple-darwin
-            artifact: ntfy-client-gui-for-all-macos-aarch64.tar.gz
-          - os: macos-14
-            target: x86_64-apple-darwin
-            artifact: ntfy-client-gui-for-all-macos-x86_64.tar.gz
-    runs-on: ${{ matrix.os }}
+  build-windows:
+    runs-on: windows-latest
+    env:
+      TARGET: x86_64-pc-windows-msvc
+      ARTIFACT: ntfy-client-gui-for-all-windows-x86_64.zip
     steps:
-      - uses: actions/checkout@v4
-      - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libx11-xcb-dev libxcursor-dev libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev pkg-config
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@1.92.0
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ env.TARGET }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --locked --release --target ${{ matrix.target }}
-      - if: runner.os == 'Windows'
-        shell: pwsh
+      - run: cargo build --locked --release --target $env:TARGET
+      - shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon.exe" dist/
-          Copy-Item "target/${{ matrix.target }}/release/ntfy-client-gui-for-all.exe" dist/
+          Copy-Item "target/$env:TARGET/release/ntfy-client-gui-for-all-daemon.exe" dist/
+          Copy-Item "target/$env:TARGET/release/ntfy-client-gui-for-all.exe" dist/
           Copy-Item README.md,README.en.md,LICENSE dist/
-          Compress-Archive -Path dist/* -DestinationPath "${{ matrix.artifact }}"
-          (Get-FileHash "${{ matrix.artifact }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.artifact }}" | Set-Content -NoNewline "${{ matrix.artifact }}.sha256"
-      - if: runner.os == 'Linux'
-        run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon target/${{ matrix.target }}/release/ntfy-client-gui-for-all dist/
-          cp packaging/linux/ntfy-client-gui-for-all.desktop README.md README.en.md LICENSE dist/
-          cp assets/logo.svg dist/ntfy-client-gui-for-all.svg
-          tar -czf "${{ matrix.artifact }}" -C dist .
-          sha256sum "${{ matrix.artifact }}" > "${{ matrix.artifact }}.sha256"
-      - if: runner.os == 'macOS'
-        run: |
-          app="dist/ntfy-client-gui-for-all.app"
-          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-          cp target/${{ matrix.target }}/release/ntfy-client-gui-for-all-daemon target/${{ matrix.target }}/release/ntfy-client-gui-for-all "$app/Contents/MacOS/"
-          cp packaging/macos/Info.plist "$app/Contents/"
-          cp assets/logo.svg "$app/Contents/Resources/"
-          codesign --force --deep --sign - "$app"
-          tar -czf "${{ matrix.artifact }}" -C dist "ntfy-client-gui-for-all.app"
-          shasum -a 256 "${{ matrix.artifact }}" > "${{ matrix.artifact }}.sha256"
+          Compress-Archive -Path dist/* -DestinationPath $env:ARTIFACT
+          (Get-FileHash $env:ARTIFACT -Algorithm SHA256).Hash.ToLower() + "  $env:ARTIFACT" | Set-Content -NoNewline "${env:ARTIFACT}.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}
+          name: windows-x86_64
           path: |
-            ${{ matrix.artifact }}
-            ${{ matrix.artifact }}.sha256
+            ${{ env.ARTIFACT }}
+            ${{ env.ARTIFACT }}.sha256
 
   publish:
-    needs: build
+    needs: build-windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
