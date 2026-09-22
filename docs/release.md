@@ -37,8 +37,8 @@ Do not present the CI ad-hoc bundle as notarized.
 Update the workspace version and macOS `CFBundleShortVersionString`, commit, then:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 The release workflow builds all configured targets and attaches archives plus `.sha256` files. The in-app checker targets this repository and only reports `verified_asset_available` when both names match the active OS/architecture and the sidecar exists.

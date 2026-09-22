@@ -2873,7 +2873,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-config"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "directories",
  "rand 0.9.5",
@@ -2889,7 +2889,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64 0.22.1",
  "futures-util",
@@ -2914,7 +2914,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-gui-for-all"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "ntfy-client-config",
@@ -2929,7 +2929,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-gui-for-all-daemon"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "ntfy-client-config",
@@ -2946,7 +2946,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-ipc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "ntfy-client-config",
  "serde",
@@ -2960,7 +2960,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-platform"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "arboard",
  "auto-launch",
@@ -2977,7 +2977,7 @@ dependencies = [
 
 [[package]]
 name = "ntfy-client-protocol"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",

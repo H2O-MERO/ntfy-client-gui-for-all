@@ -102,11 +102,17 @@ pub fn spawn_tray(
                     }
                 }
                 #[cfg(target_os = "linux")]
-                loop {
-                    std::thread::park();
+                {
+                    let _keep_tray_alive = tray;
+                    loop {
+                        std::thread::park();
+                    }
                 }
-                drop(tray);
-                Ok(())
+                #[cfg(windows)]
+                {
+                    drop(tray);
+                    Ok(())
+                }
             })();
             if let Err(error) = result {
                 ready_tx.send(Err(error)).ok();
@@ -253,9 +259,7 @@ impl NotificationBackend for NativeNotificationBackend {
             .timeout(if request.timeout_seconds == 0 {
                 Timeout::Never
             } else {
-                Timeout::Milliseconds(
-                    (request.timeout_seconds.saturating_mul(1000)).min(i32::MAX as u32) as i32,
-                )
+                Timeout::Milliseconds(request.timeout_seconds.saturating_mul(1000))
             })
             .action("copy", if request.auto_copy { "Copied" } else { "Copy" });
         let mut view_urls = Vec::new();
